@@ -1,0 +1,2555 @@
+<!DOCTYPE html>
+<html lang="id" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SAP Migration - Mitratel Non-Tower Asset</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'ui-sans-serif', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'sans-serif'],
+                    },
+                    colors: {
+                        mitratel: {
+                            red: '#EE2E24',      // Mitratel Red
+                            dark: '#111827',     // Deep Charcoal
+                            gray: '#F3F4F6',     // Light Gray
+                            hover: '#C91E17'     // Darker Red for hover
+                        }
+                    },
+                    boxShadow: {
+                        'soft': '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)',
+                        'glow': '0 0 15px rgba(238, 46, 36, 0.3)'
+                    },
+                    animation: {
+                        'bounce-short': 'bounce 1s infinite 2',
+                        'pulse-fast': 'pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- SheetJS for Excel Processing -->
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        
+        /* Custom Styles */
+        .loader {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #EE2E24;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            animation: spin 0.8s linear infinite;
+            display: inline-block;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        /* Updated Viz Container for Zoom/Pan */
+        #viz-scroll-container {
+            overflow: scroll;
+            width: 100%;
+            height: 100%;
+            background-color: #ffffff;
+            cursor: grab;
+            position: relative;
+            background-image: radial-gradient(#e5e7eb 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+        /* Dark mode override for scroll container */
+        .dark #viz-scroll-container {
+            background-color: #111827;
+            background-image: radial-gradient(#374151 1px, transparent 1px);
+        }
+
+        #viz-scroll-container:active {
+            cursor: grabbing;
+        }
+        
+        /* SVG Styles */
+        text { font-family: 'Inter', sans-serif; }
+        .pid-box { fill: #ffffff; stroke: #15803d; stroke-width: 1px; rx: 6; }
+        .cable-box { fill: #ffffff; stroke: #EE2E24; stroke-width: 1px; rx: 4; }
+        .dark .pid-box { fill: #1f2937; stroke: #22c55e; }
+        .dark .cable-box { fill: #1f2937; stroke: #ef4444; }
+        
+        /* Highlight Styles */
+        .highlight-pid-box { fill: #FEF2F2 !important; stroke: #EE2E24 !important; stroke-width: 2px !important; } 
+        .dark .highlight-pid-box { fill: #450a0a !important; stroke: #ef4444 !important; }
+        .highlight-pid-text { fill: #EE2E24 !important; font-weight: 800 !important; font-size: 11px !important; text-decoration: underline; }
+        .dark .highlight-pid-text { fill: #fca5a5 !important; }
+        .row-highlight { background-color: #FEF2F2 !important; }
+        .dark .row-highlight { background-color: #450a0a !important; color: white !important; }
+
+        /* Transitions */
+        .fade-in { animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Table Sticky Header */
+        th.sticky-header { position: sticky; top: 0; background: #f9fafb; z-index: 10; backdrop-filter: blur(4px); background-color: rgba(249, 250, 251, 0.9); }
+        .dark th.sticky-header { background-color: rgba(17, 24, 39, 0.9); color: #e5e7eb; }
+
+        /* --- Converter styles (embedded) --- */
+        .drop-zone {
+            transition: all 0.3s ease;
+            background-image: url("data:image/svg+xml,%3csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3e%3crect width='100%25' height='100%25' fill='none' rx='12' ry='12' stroke='%23D1D5DBFF' stroke-width='2' stroke-dasharray='8%2c 8' stroke-dashoffset='0' stroke-linecap='square'/%3e%3c/svg%3e");
+        }
+        .dark .drop-zone {
+             background-image: url("data:image/svg+xml,%3csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3e%3crect width='100%25' height='100%25' fill='none' rx='12' ry='12' stroke='%234B5563FF' stroke-width='2' stroke-dasharray='8%2c 8' stroke-dashoffset='0' stroke-linecap='square'/%3e%3c/svg%3e");
+        }
+        .drop-zone.dragover {
+            background-color: #FEF2F2;
+            background-image: url("data:image/svg+xml,%3csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3e%3crect width='100%25' height='100%25' fill='none' rx='12' ry='12' stroke='%23EE2E24FF' stroke-width='2' stroke-dasharray='8%2c 8' stroke-dashoffset='0' stroke-linecap='square'/%3e%3c/svg%3e");
+        }
+        .dark .drop-zone.dragover {
+             background-color: #374151;
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        .dark ::-webkit-scrollbar-thumb { background: #4b5563; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        
+        /* Top tabs */
+        .nav-btn { position: relative; overflow: hidden; }
+        .nav-btn::after { content: ''; position: absolute; bottom: 0; left: 0; width: 0%; height: 2px; background-color: #EE2E24; transition: width 0.3s; }
+        .nav-btn:hover::after { width: 100%; }
+        .nav-btn.active::after { width: 100%; }
+
+        /* Toast Notification */
+        #toast-container { position: fixed; bottom: 20px; right: 20px; z-index: 100; display: flex; flex-direction: column; gap: 10px; }
+        .toast {
+            animation: slideIn 0.3s ease-out;
+        }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        
+    </style>
+</head>
+<body class="bg-gray-50 text-slate-800 font-sans p-4 md:p-8 dark:bg-gray-950 dark:text-gray-100 transition-colors duration-300" onclick="closeDropdowns(event)">
+
+    <!-- Top Navigation / Branding -->
+    <div class="max-w-7xl mx-auto mb-8">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
+            
+            <!-- Branding + Gamification Widget -->
+            <div class="flex items-center gap-4 w-full md:w-auto">
+                <!-- Mitratel Icon Style -->
+                <div class="w-12 h-12 rounded-xl bg-white dark:bg-gray-800 shadow-soft flex items-center justify-center border border-gray-100 dark:border-gray-700 flex-shrink-0">
+                    <i class="fa-solid fa-tower-broadcast text-2xl text-mitratel-red"></i>
+                </div>
+                <div class="flex flex-col">
+                    <div class="font-bold text-2xl tracking-tight text-slate-900 dark:text-white leading-none">Mitratel</div>
+                    <div class="text-xs font-semibold uppercase tracking-wider text-mitratel-red mt-1">SPARTAN 4 LEGOK TEAM</div>
+                </div>
+                
+                <!-- Gamification Divider -->
+                <div class="hidden md:block w-px h-10 bg-gray-200 dark:bg-gray-700 mx-2"></div>
+
+                <!-- User Stats Widget (Gamification) -->
+                <div class="hidden md:flex items-center gap-3 bg-white dark:bg-gray-800 px-3 py-1.5 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm">
+                    <div class="relative">
+                        <div class="w-10 h-10 rounded-full bg-slate-100 dark:bg-gray-700 flex items-center justify-center text-xl overflow-hidden border-2 border-mitratel-red">
+                            <i class="fa-solid fa-user-astronaut text-slate-600 dark:text-gray-300"></i>
+                        </div>
+                        <div class="absolute -bottom-1 -right-1 bg-mitratel-red text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full border-2 border-white dark:border-gray-800" id="userLevel">Lvl 1</div>
+                    </div>
+                    <div>
+                        <div class="text-xs font-bold text-slate-800 dark:text-white" id="userRank">Intern Validator</div>
+                        <div class="w-24 h-1.5 bg-gray-200 dark:bg-gray-600 rounded-full mt-1 overflow-hidden">
+                            <div class="h-full bg-gradient-to-r from-orange-400 to-mitratel-red rounded-full transition-all duration-500" id="xpBar" style="width: 0%"></div>
+                        </div>
+                        <div class="text-[9px] text-gray-500 dark:text-gray-400 mt-0.5"><span id="userXp">0</span> XP</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Global Controls -->
+            <div class="flex items-center bg-white dark:bg-gray-800 p-1.5 rounded-2xl shadow-soft border border-gray-100 dark:border-gray-700">
+                <!-- Tabs -->
+                <button id="tabBtnValidator" class="px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 bg-gray-50 text-slate-900 shadow-sm dark:bg-gray-700 dark:text-white">
+                    <i class="fa-solid fa-file-shield mr-2 text-mitratel-red"></i>Validator
+                </button>
+                <button id="tabBtnConverter" class="px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 text-slate-500 hover:text-slate-900 dark:text-gray-400 dark:hover:text-white">
+                    <i class="fa-solid fa-arrow-right-arrow-left mr-2"></i>Converter
+                </button>
+                
+                <div class="w-px h-6 bg-gray-200 dark:bg-gray-600 mx-2"></div>
+
+                <!-- Dark Mode Toggle -->
+                <button onclick="toggleDarkMode()" class="w-9 h-9 rounded-xl text-slate-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700 transition flex items-center justify-center" title="Toggle Theme">
+                    <i id="themeIcon" class="fa-regular fa-moon"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+<!-- TAB: VALIDATOR -->
+<div id="tab-validator" class="fade-in">
+
+    <div class="max-w-7xl mx-auto bg-white dark:bg-gray-900 shadow-xl shadow-gray-200/50 dark:shadow-none rounded-2xl p-6 md:p-8 relative border border-gray-100 dark:border-gray-800">
+        
+        <!-- Header -->
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 pb-6 border-b border-gray-100 dark:border-gray-800 gap-4">
+            <div>
+                <h1 class="text-xl font-bold text-slate-900 dark:text-white">SAP Migration Suite</h1>
+                <p class="text-sm text-slate-500 dark:text-gray-400 mt-1 flex items-center gap-2">
+                    <span class="bg-gray-100 dark:bg-gray-800 text-xs px-2 py-0.5 rounded text-gray-600 dark:text-gray-300 font-mono">v4.11</span>
+                    Clean Export & Validation
+                </p>
+            </div>
+            <div class="flex flex-wrap items-center gap-3">
+                 <!-- CLEAR FILES BUTTON -->
+                 <button id="btnClearFiles" onclick="clearValidatorQueue()" class="hidden px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wide text-gray-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition flex items-center">
+                    <i class="fa-solid fa-trash mr-2"></i>Clear Queue
+                </button>
+
+                 <button id="btnStartValidation" onclick="startBatchValidation()" class="hidden bg-mitratel-red hover:bg-mitratel-hover text-white font-medium py-2 px-5 rounded-lg shadow-lg shadow-red-500/30 flex items-center transition transform hover:scale-[1.02] active:scale-95">
+                    <i class="fa-solid fa-play mr-2 text-xs"></i>
+                    Start Validation
+                </button>
+                
+                <!-- Group Actions -->
+                <div id="groupActions" class="hidden flex items-center gap-3">
+                    <button id="btnDownloadReport" onclick="downloadSummaryReport()" class="bg-slate-800 hover:bg-slate-900 dark:bg-gray-700 dark:hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-lg shadow flex items-center transition text-sm">
+                        <i class="fa-solid fa-table mr-2"></i> Report
+                    </button>
+
+                    <!-- Batch Download Dropdown -->
+                    <div class="relative inline-block text-left">
+                        <button onclick="toggleBatchMenu(event)" class="bg-white border border-gray-200 dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 text-slate-700 dark:text-gray-200 font-medium py-2 px-4 rounded-lg shadow-sm flex items-center transition text-sm">
+                            <i class="fa-solid fa-download mr-2 text-mitratel-red"></i>
+                            Download
+                            <i class="fa-solid fa-chevron-down ml-2 text-xs opacity-50"></i>
+                        </button>
+                        <!-- Dropdown Menu -->
+                        <div id="batchMenu" class="hidden absolute right-0 mt-2 w-64 rounded-xl shadow-2xl bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5 z-50 overflow-hidden">
+                            <div class="py-2">
+                                <div class="px-4 py-2 text-[10px] uppercase tracking-wider text-gray-400 dark:text-gray-500 font-bold">Batch Options</div>
+                                <button onclick="downloadBatch('all')" class="w-full text-left px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 flex justify-between items-center group">
+                                    <span>Download All</span>
+                                    <span id="badge-all" class="bg-gray-100 dark:bg-gray-700 group-hover:bg-white text-gray-600 dark:text-gray-300 text-xs px-2 py-0.5 rounded-md font-mono">0</span>
+                                </button>
+                                <button onclick="downloadBatch('pass')" class="w-full text-left px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-green-50 dark:hover:bg-green-900/20 flex justify-between items-center group">
+                                    <span class="flex items-center"><span class="w-2 h-2 rounded-full bg-green-500 mr-2"></span>Pass Only</span>
+                                    <span id="badge-pass" class="bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 text-xs px-2 py-0.5 rounded-md font-mono">0</span>
+                                </button>
+                                <button onclick="downloadBatch('fail')" class="w-full text-left px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-red-50 dark:hover:bg-red-900/20 flex justify-between items-center group">
+                                    <span class="flex items-center"><span class="w-2 h-2 rounded-full bg-red-500 mr-2"></span>Fail Only</span>
+                                    <span id="badge-fail" class="bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 text-xs px-2 py-0.5 rounded-md font-mono">0</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SAP TXT Export Dropdown -->
+                    <div class="relative inline-block text-left">
+                        <button onclick="toggleSapMenu(event)" class="bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2 px-4 rounded-lg shadow-lg shadow-emerald-500/20 flex items-center transition text-sm">
+                            <i class="fa-solid fa-file-code mr-2"></i>
+                            SAP TXT
+                            <i class="fa-solid fa-chevron-down ml-2 text-xs opacity-70"></i>
+                        </button>
+                        <div id="sapMenu" class="hidden absolute right-0 mt-2 w-72 rounded-xl shadow-2xl bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5 z-50 overflow-hidden">
+                             <div class="px-4 py-3 bg-gray-50 dark:bg-gray-800/50 border-b border-gray-100 dark:border-gray-700">
+                                <p class="text-xs text-gray-500 dark:text-gray-400">Export SAP-ready text files (Tab-delimited).</p>
+                            </div>
+                            <div class="py-2">
+                                <button onclick="downloadSapBatch('pass','separate')" class="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 flex justify-between items-center">
+                                    <span>PASS Only (Separate)</span>
+                                    <span class="bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300 text-xs px-2 py-0.5 rounded-md font-mono" id="badge-sap-pass">0</span>
+                                </button>
+                                <button onclick="downloadSapBatch('all','separate')" class="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 flex justify-between items-center">
+                                    <span>All Files (Separate)</span>
+                                    <span class="bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-xs px-2 py-0.5 rounded-md font-mono" id="badge-sap-all">0</span>
+                                </button>
+                                <div class="border-t border-gray-100 dark:border-gray-700 my-2"></div>
+                                <div class="px-4 pb-2">
+                                    <label class="text-[10px] uppercase font-bold text-gray-400 mb-1 block">Merge Output Filename</label>
+                                    <input id="sapMergedFilename" class="w-full bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded px-2 py-1.5 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none dark:text-white" placeholder="SAP_MERGED.txt">
+                                </div>
+                                <button onclick="downloadSapBatch('pass','merge')" class="w-full text-left px-4 py-2 text-sm text-emerald-600 dark:text-emerald-400 font-medium hover:bg-emerald-50 dark:hover:bg-emerald-900/20">
+                                    <i class="fa-solid fa-object-group mr-2"></i>Merge PASS Files
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <button onclick="toggleGuide()" class="p-2 text-gray-400 hover:text-mitratel-red transition" title="Help">
+                    <i class="fa-regular fa-circle-question text-xl"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Summary Dashboard -->
+        <div id="summary-dashboard" class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 hidden animate-fade-in">
+            <!-- Total -->
+            <div class="bg-white dark:bg-gray-800 p-5 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm flex items-center justify-between">
+                <div>
+                    <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Total Processed</p>
+                    <p class="text-3xl font-bold text-slate-800 dark:text-white mt-1" id="stat-total">0</p>
+                </div>
+                <div class="w-10 h-10 rounded-full bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+                    <i class="fa-solid fa-layer-group"></i>
+                </div>
+            </div>
+            <!-- Passed -->
+            <div class="bg-white dark:bg-gray-800 p-5 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm flex items-center justify-between">
+                <div>
+                    <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Passed Validation</p>
+                    <p class="text-3xl font-bold text-emerald-600 dark:text-emerald-400 mt-1" id="stat-pass">0</p>
+                </div>
+                <div class="w-10 h-10 rounded-full bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+                    <i class="fa-solid fa-check"></i>
+                </div>
+            </div>
+            <!-- Failed -->
+            <div class="bg-white dark:bg-gray-800 p-5 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm flex items-center justify-between">
+                <div>
+                    <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Failed Validation</p>
+                    <p class="text-3xl font-bold text-mitratel-red mt-1" id="stat-fail">0</p>
+                </div>
+                <div class="w-10 h-10 rounded-full bg-red-50 dark:bg-red-900/20 text-mitratel-red flex items-center justify-center">
+                    <i class="fa-solid fa-xmark"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Area Drop Zone -->
+        <div id="drop-area" class="border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-2xl p-10 text-center hover:border-mitratel-red dark:hover:border-mitratel-red hover:bg-red-50 dark:hover:bg-red-900/10 transition-all cursor-pointer mb-8 group bg-gray-50 dark:bg-gray-800/50">
+            <div class="space-y-4">
+                <div class="w-16 h-16 bg-white dark:bg-gray-800 rounded-full shadow-sm flex items-center justify-center mx-auto group-hover:scale-110 transition-transform duration-300">
+                    <i class="fa-solid fa-cloud-arrow-up text-3xl text-gray-300 group-hover:text-mitratel-red transition-colors"></i>
+                </div>
+                <div>
+                    <p class="text-slate-600 dark:text-gray-300 font-medium text-lg">Drop your Excel files here</p>
+                    <p class="text-sm text-gray-400 dark:text-gray-500 mt-1">Supports .xlsx, .xls (Mitratel Format)</p>
+                </div>
+            </div>
+            <input type="file" id="fileElem" multiple accept=".xlsx, .xls, .csv" class="hidden">
+        </div>
+
+        <!-- Search & Filter Toolbar -->
+        <div class="flex flex-col md:flex-row justify-between items-end md:items-center mb-4 gap-4 animate-fade-in">
+            <div class="relative w-full md:w-96">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <i class="fa-solid fa-magnifying-glass text-gray-400"></i>
+                </div>
+                <input type="text" id="queueSearch" 
+                    class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white text-sm rounded-xl focus:ring-mitratel-red focus:border-mitratel-red block w-full pl-10 p-2.5 shadow-sm transition-all" 
+                    placeholder="Search Filename or PID..." onkeyup="filterQueueTable()">
+            </div>
+            
+            <div class="flex items-center gap-2">
+                <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-1 flex shadow-sm">
+                    <button onclick="setQueueFilter('all')" id="filter-btn-all" class="px-3 py-1.5 text-xs font-bold rounded-lg bg-slate-800 text-white shadow-md transform scale-105 transition-all">ALL</button>
+                    <button onclick="setQueueFilter('PASS')" id="filter-btn-pass" class="px-3 py-1.5 text-xs font-bold rounded-lg text-gray-500 hover:text-green-600 hover:bg-green-50 dark:text-gray-400 dark:hover:bg-green-900/20 transition-all">PASS</button>
+                    <button onclick="setQueueFilter('FAIL')" id="filter-btn-fail" class="px-3 py-1.5 text-xs font-bold rounded-lg text-gray-500 hover:text-red-600 hover:bg-red-50 dark:text-gray-400 dark:hover:bg-red-900/20 transition-all">FAIL</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabel Hasil -->
+        <div class="overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700">
+            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                <thead class="bg-gray-50 dark:bg-gray-800">
+                    <tr>
+                        <th class="py-4 px-6 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">No</th>
+                        <th class="py-4 px-6 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Target PID / File</th>
+                        <th class="py-4 px-6 text-center text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status</th>
+                        <th class="py-4 px-6 text-center text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Verified</th>
+                        <th class="py-4 px-6 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Validation Log</th>
+                        <th class="py-4 px-6 text-center text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="result-body" class="divide-y divide-gray-100 dark:divide-gray-800 bg-white dark:bg-gray-900">
+                    <!-- Rows inserted via JS -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- TAB: CONVERTER -->
+<div id="tab-converter" class="hidden fade-in">
+    <div class="max-w-4xl mx-auto">
+        <div class="bg-white dark:bg-gray-900 w-full rounded-2xl shadow-xl shadow-gray-200/50 dark:shadow-none overflow-hidden border border-gray-100 dark:border-gray-800">
+            <!-- Header -->
+            <div class="bg-gray-50 dark:bg-gray-800/50 p-8 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center">
+                <div>
+                    <h2 class="text-xl font-bold text-slate-900 dark:text-white">Universal Converter</h2>
+                    <p class="text-slate-500 dark:text-gray-400 text-sm mt-1">Merge or Convert Excel &amp; Text files efficiently.</p>
+                </div>
+                <div class="h-12 w-12 bg-white dark:bg-gray-700 rounded-xl flex items-center justify-center shadow-sm">
+                    <i class="fa-solid fa-shuffle text-mitratel-red text-xl"></i>
+                </div>
+            </div>
+            
+            <div class="p-8 space-y-8">
+                <!-- 1. Source Format -->
+                <div>
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-4">1. Select Source Format</h3>
+                    <div class="flex gap-3">
+                        <button id="modeExcel" class="flex-1 py-3 px-4 rounded-xl border-2 border-mitratel-red bg-red-50 dark:bg-red-900/10 text-mitratel-red font-semibold transition-all flex items-center justify-center gap-2">
+                            <i class="fa-regular fa-file-excel"></i> Excel (.xlsx)
+                        </button>
+                        <button id="modeText" class="flex-1 py-3 px-4 rounded-xl border border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-600 transition-all flex items-center justify-center gap-2">
+                            <i class="fa-regular fa-file-lines"></i> Text (.txt)
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 2. Drop Zone -->
+                <div class="drop-zone w-full h-48 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors relative group" id="dropZone">
+                    <input accept=".xlsx, .xls" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" id="fileInput" multiple="" type="file"/>
+                    <div class="text-center pointer-events-none transition-transform group-hover:scale-105 duration-300">
+                        <i class="fa-solid fa-folder-open text-4xl text-gray-300 dark:text-gray-600 mb-3 group-hover:text-mitratel-red transition-colors" id="dropIcon"></i>
+                        <p class="text-slate-600 dark:text-gray-300 font-medium">Click or Drag files here</p>
+                        <p class="text-slate-400 dark:text-gray-500 text-xs mt-1" id="acceptText">Accepts multiple .xlsx files</p>
+                    </div>
+                </div>
+
+                <!-- File List -->
+                <div class="hidden" id="fileListContainer">
+                    <div class="flex justify-between items-end mb-3">
+                        <h3 class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Queue (<span id="fileCount">0</span>)</h3>
+                        <button class="text-xs text-red-500 hover:text-red-700 font-bold uppercase" id="clearBtn">Clear All</button>
+                    </div>
+                    <div class="bg-gray-50 dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 max-h-48 overflow-y-auto file-list-container p-3 space-y-2" id="fileList">
+                        <!-- Files will be injected here -->
+                    </div>
+                </div>
+
+                <!-- 3. Output Options -->
+                <div>
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-4">2. Output Configuration</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="space-y-3">
+                            <label class="flex items-center gap-3 p-3 rounded-xl border border-gray-200 dark:border-gray-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition">
+                                <input checked="" class="w-5 h-5 text-mitratel-red focus:ring-mitratel-red border-gray-300" name="outputMode" type="radio" value="merge"/>
+                                <span class="text-sm font-medium text-slate-700 dark:text-gray-300">Merge into single file</span>
+                            </label>
+                            <label class="flex items-center gap-3 p-3 rounded-xl border border-gray-200 dark:border-gray-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition">
+                                <input class="w-5 h-5 text-mitratel-red focus:ring-mitratel-red border-gray-300" name="outputMode" type="radio" value="separate"/>
+                                <span class="text-sm font-medium text-slate-700 dark:text-gray-300">Keep separate files</span>
+                            </label>
+                        </div>
+                        
+                        <!-- Custom Filename Input -->
+                        <div class="transition-all duration-300" id="filenameContainer">
+                            <label class="block text-xs font-bold uppercase tracking-wider text-gray-400 mb-2" for="customFilename">
+                                Filename (Merge Only)
+                            </label>
+                            <div class="flex items-center">
+                                <input class="w-full text-sm p-3 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-white rounded-l-xl focus:ring-2 focus:ring-mitratel-red focus:border-mitratel-red outline-none transition" id="customFilename" placeholder="Project_Merged" type="text"/>
+                                <div class="bg-gray-100 dark:bg-gray-700 border border-l-0 border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-300 px-4 py-3 text-sm rounded-r-xl font-mono">.txt</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Process Button -->
+                <button class="w-full bg-slate-900 dark:bg-white dark:text-slate-900 text-white font-bold py-4 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed hover:bg-mitratel-red dark:hover:bg-gray-200 transition-all shadow-lg transform active:scale-[0.99] flex items-center justify-center gap-3" disabled="" id="convertBtn">
+                    <span>Run Conversion</span>
+                    <i class="fa-solid fa-arrow-right"></i>
+                </button>
+                
+                <!-- Status Log -->
+                <div class="hidden text-xs font-mono bg-gray-50 dark:bg-gray-950 dark:text-gray-400 p-4 rounded-xl border border-gray-200 dark:border-gray-800 max-h-32 overflow-y-auto" id="statusLog"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODALS -->
+<!-- 1. Guide Modal -->
+<div id="guideModal" class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4 transition-opacity">
+    <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl max-w-2xl w-full p-8 relative border border-gray-100 dark:border-gray-800">
+        <button onclick="toggleGuide()" class="absolute top-6 right-6 text-gray-400 hover:text-slate-900 dark:hover:text-white transition">
+            <i class="fa-solid fa-xmark text-xl"></i>
+        </button>
+        <h2 class="text-2xl font-bold text-slate-900 dark:text-white mb-6">User Guide <span class="text-mitratel-red">v4.11</span></h2>
+        <div class="space-y-4 text-sm text-slate-600 dark:text-gray-300 overflow-y-auto max-h-[60vh] pr-2">
+            <div class="p-4 bg-gray-50 dark:bg-gray-800 rounded-xl">
+                <h3 class="font-bold text-slate-900 dark:text-white mb-2"><i class="fa-solid fa-wand-magic-sparkles text-mitratel-red mr-2"></i>New Feature: Clean Export</h3>
+                <p>The system now automatically removes helper columns (like <code>STRNO_LENGTH</code>) from your exports, ensuring the file is ready for SAP upload immediately.</p>
+            </div>
+            
+            <h3 class="font-bold mt-4">Visualizer Navigation</h3>
+            <ul class="list-disc pl-5 space-y-2">
+                <li><strong>Tab 1 (Visual):</strong> Shows the topological view of the ring. Scroll to pan, Ctrl+Scroll to zoom. <strong>Now supports OTB Insert Sites!</strong></li>
+                <li><strong>Tab 2 (Display Data):</strong> Shows <code>display_ring</code> sheet data (technical columns hidden).</li>
+                <li><strong>Tab 3 (Tenant Data):</strong> Searchable table of the <code>below_ring</code> sheet.</li>
+                <li><strong>Tab 4 (Validation Log):</strong> Shows validation errors specific to the current file.</li>
+            </ul>
+
+            <div class="p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-xl border border-yellow-100 dark:border-yellow-900 mt-4">
+                 <h3 class="font-bold text-yellow-800 dark:text-yellow-200 mb-2"><i class="fa-solid fa-star mr-2"></i>Gamification & Verification</h3>
+                 <p class="text-yellow-700 dark:text-yellow-300">You now earn XP for every valid file. Manually verifying a file (using the "Verify Structure" button in the view modal) awards extra XP!</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 2. Viz Modal (Full Screen) -->
+<div id="vizModal" class="fixed inset-0 bg-gray-900/80 backdrop-blur-sm hidden z-50 flex flex-col transition-opacity duration-300">
+    <div class="m-auto bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-[98%] h-[95vh] flex flex-col overflow-hidden border border-gray-200 dark:border-gray-800">
+        <!-- Header -->
+        <div class="flex justify-between items-center px-6 py-4 border-b border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900">
+            <div class="flex items-center gap-4">
+                <div>
+                    <h3 class="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-3">
+                        <i class="fa-solid fa-eye text-mitratel-red"></i>
+                        Detail View
+                        <span id="targetPidDisplay" class="font-mono text-xs bg-slate-100 dark:bg-gray-800 text-slate-600 dark:text-gray-300 px-2 py-1 rounded border border-gray-200 dark:border-gray-700"></span>
+                    </h3>
+                    <p class="text-xs text-gray-400 mt-1" id="modalFileName">Filename.xlsx</p>
+                </div>
+                <!-- Manual Verify Button (New Feature) -->
+                <button id="btnVerifyStructure" onclick="toggleVerification()" class="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wide border transition-all">
+                    <!-- Text and icon set by JS -->
+                </button>
+            </div>
+            
+            <div class="flex items-center gap-3">
+                <div class="flex bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
+                    <button id="btnModalPrev" onclick="navigateFile(-1)" class="w-10 h-8 rounded-md flex items-center justify-center hover:bg-white dark:hover:bg-gray-700 shadow-sm disabled:opacity-30 disabled:shadow-none transition">
+                        <i class="fa-solid fa-chevron-left text-xs"></i>
+                    </button>
+                    <div class="w-px bg-gray-300 dark:bg-gray-600 mx-1 h-4 self-center"></div>
+                    <button id="btnModalNext" onclick="navigateFile(1)" class="w-10 h-8 rounded-md flex items-center justify-center hover:bg-white dark:hover:bg-gray-700 shadow-sm disabled:opacity-30 disabled:shadow-none transition">
+                        <i class="fa-solid fa-chevron-right text-xs"></i>
+                    </button>
+                </div>
+                <button onclick="closeModal()" class="w-10 h-10 rounded-full hover:bg-red-50 dark:hover:bg-red-900/20 text-gray-400 hover:text-red-500 transition flex items-center justify-center">
+                    <i class="fa-solid fa-xmark text-xl"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Tab Nav -->
+        <div class="flex px-6 border-b border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 space-x-6 overflow-x-auto">
+            <button onclick="switchTab('viz')" id="tab-viz" class="nav-btn py-4 text-sm font-semibold text-mitratel-red active whitespace-nowrap">
+                Visual Topology
+            </button>
+            <button onclick="switchTab('display')" id="tab-display" class="nav-btn py-4 text-sm font-medium text-gray-500 hover:text-slate-800 dark:text-gray-400 dark:hover:text-white whitespace-nowrap">
+                Display Data
+            </button>
+            <button onclick="switchTab('data')" id="tab-data" class="nav-btn py-4 text-sm font-medium text-gray-500 hover:text-slate-800 dark:text-gray-400 dark:hover:text-white whitespace-nowrap">
+                Tenant Data
+            </button>
+            <!-- New Error Tab -->
+            <button onclick="switchTab('errors')" id="tab-errors" class="nav-btn py-4 text-sm font-medium text-gray-500 hover:text-slate-800 dark:text-gray-400 dark:hover:text-white whitespace-nowrap">
+                Validation Log <span id="error-badge" class="ml-1 bg-red-100 text-red-600 text-[10px] px-1.5 py-0.5 rounded-full hidden">0</span>
+            </button>
+        </div>
+
+        <!-- Content -->
+        <div class="flex-1 overflow-hidden relative bg-gray-100 dark:bg-gray-950">
+            <!-- Viz -->
+            <div id="content-viz" class="absolute inset-0">
+                <div id="viz-scroll-container">
+                    <div id="viz-scale-container" class="origin-top-left p-12 min-w-max min-h-max transition-transform duration-200">
+                         <div class="flex flex-col items-center justify-center h-full text-gray-300 dark:text-gray-600 mt-20 gap-4">
+                             <i class="fa-solid fa-circle-notch fa-spin text-4xl"></i>
+                             <p class="font-medium">Rendering Topology...</p>
+                         </div>
+                    </div>
+                </div>
+                <!-- Controls -->
+                <div class="absolute bottom-8 right-8 flex flex-col gap-2">
+                    <button onclick="changeZoom(0.1)" class="w-10 h-10 bg-white dark:bg-gray-800 rounded-full shadow-lg text-slate-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center justify-center transition border border-gray-100 dark:border-gray-700">
+                        <i class="fa-solid fa-plus"></i>
+                    </button>
+                    <button onclick="resetZoom()" class="w-10 h-10 bg-white dark:bg-gray-800 rounded-full shadow-lg text-slate-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center justify-center transition border border-gray-100 dark:border-gray-700">
+                        <i class="fa-solid fa-compress"></i>
+                    </button>
+                    <button onclick="changeZoom(-0.1)" class="w-10 h-10 bg-white dark:bg-gray-800 rounded-full shadow-lg text-slate-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center justify-center transition border border-gray-100 dark:border-gray-700">
+                        <i class="fa-solid fa-minus"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Display Table -->
+            <div id="content-display" class="absolute inset-0 p-8 hidden flex flex-col bg-white dark:bg-gray-900">
+                 <div class="flex justify-between items-center mb-6">
+                    <h4 class="font-bold text-slate-800 dark:text-white">Sheet: display_ring</h4>
+                    <span class="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded">Filtered View</span>
+                </div>
+                <div class="flex-1 overflow-auto rounded-xl border border-gray-200 dark:border-gray-800">
+                    <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-800 text-xs">
+                        <thead class="bg-gray-50 dark:bg-gray-800" id="display-ring-head"></thead>
+                        <tbody id="display-ring-body" class="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-800"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Tenant Data -->
+            <div id="content-data" class="absolute inset-0 p-8 hidden flex flex-col bg-white dark:bg-gray-900">
+                <div class="flex justify-between items-center mb-6">
+                    <div class="relative w-96">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                        <input type="text" id="tableSearch" placeholder="Search STRNO, PID..." class="w-full pl-10 pr-4 py-2 bg-gray-50 dark:bg-gray-800 border-none rounded-lg text-sm focus:ring-2 focus:ring-mitratel-red focus:outline-none dark:text-white" onkeyup="filterTable()">
+                    </div>
+                    <div class="text-xs font-mono text-gray-500">
+                        <span id="showStart">0</span>-<span id="showEnd">0</span> of <span id="totalRows">0</span>
+                    </div>
+                </div>
+                <div class="flex-1 overflow-auto rounded-xl border border-gray-200 dark:border-gray-800">
+                    <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
+                        <thead class="bg-gray-50 dark:bg-gray-800 sticky-header">
+                            <tr>
+                                <th class="py-3 px-6 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">STRNO</th>
+                                <th class="py-3 px-6 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">ABCKZ</th>
+                                <th class="py-3 px-6 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">PLTXT</th>
+                                <th class="py-3 px-6 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">STORT</th>
+                                <th class="py-3 px-6 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">ARBPL</th>
+                            </tr>
+                        </thead>
+                        <tbody id="data-table-body" class="bg-white dark:bg-gray-900 divide-y divide-gray-100 dark:divide-gray-100 text-sm"></tbody>
+                    </table>
+                </div>
+                <div class="mt-4 flex justify-end gap-2">
+                    <button onclick="changePage(-1)" id="btnPrev" class="px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-lg text-sm hover:bg-gray-50 dark:hover:bg-gray-800 dark:text-white">Previous</button>
+                    <span id="pageIndicator" class="px-4 py-2 text-sm font-medium dark:text-white flex items-center">Page 1</span>
+                    <button onclick="changePage(1)" id="btnNext" class="px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-lg text-sm hover:bg-gray-50 dark:hover:bg-gray-800 dark:text-white">Next</button>
+                </div>
+            </div>
+
+            <!-- Error Log Tab -->
+            <div id="content-errors" class="absolute inset-0 p-8 hidden flex flex-col bg-white dark:bg-gray-900">
+                <div class="flex justify-between items-center mb-6">
+                    <h4 class="font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                        <i class="fa-solid fa-triangle-exclamation text-red-500"></i>
+                        Validation Errors
+                    </h4>
+                    <span class="text-xs bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-300 px-3 py-1 rounded-full font-medium" id="error-count-display">0 Issues Found</span>
+                </div>
+                <div class="flex-1 overflow-auto rounded-xl border border-gray-200 dark:border-gray-800">
+                    <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
+                        <thead class="bg-gray-50 dark:bg-gray-800 sticky-header">
+                            <tr>
+                                <th class="py-3 px-6 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase w-24">Row</th>
+                                <th class="py-3 px-6 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase w-40">Rule</th>
+                                <th class="py-3 px-6 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">Message</th>
+                            </tr>
+                        </thead>
+                        <tbody id="error-table-body" class="bg-white dark:bg-gray-900 divide-y divide-gray-100 dark:divide-gray-800">
+                            <!-- Populated via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Toast Container -->
+<div id="toast-container"></div>
+
+<script>
+        // ... (Dark Mode Logic and Global State - Unchanged) ...
+        // --- DARK MODE LOGIC ---
+        function toggleDarkMode() {
+            const html = document.documentElement;
+            const icon = document.getElementById('themeIcon');
+            
+            if (html.classList.contains('dark')) {
+                html.classList.remove('dark');
+                localStorage.theme = 'light';
+                icon.className = 'fa-regular fa-moon';
+            } else {
+                html.classList.add('dark');
+                localStorage.theme = 'dark';
+                icon.className = 'fa-regular fa-sun';
+            }
+        }
+
+        // Init Dark Mode
+        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+            document.getElementById('themeIcon').className = 'fa-regular fa-sun';
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+
+        // --- GLOBAL STATE ---
+        const appState = {
+            queue: [],
+            processed: {}, // Key: fileName, Value: processedData
+            processedKeys: [], // Array of fileNames for navigation order
+            currentData: [],
+            filteredData: [],
+            currentPage: 1,
+            rowsPerPage: 100,
+            targetPID: "",
+            currentFileIndex: -1, 
+            stats: { total: 0, pass: 0, fail: 0 }
+        };
+
+        // --- GAMIFICATION SYSTEM ---
+        const GameSystem = {
+            stats: { xp: 0, level: 1, verifiedCount: 0 },
+            verifiedPids: [], // Stores list of manually verified PIDs
+
+            init: function() {
+                const storedStats = localStorage.getItem('mitratel_user_stats');
+                const storedPids = localStorage.getItem('mitratel_verified_pids');
+                if(storedStats) this.stats = JSON.parse(storedStats);
+                if(storedPids) this.verifiedPids = JSON.parse(storedPids);
+                this.updateUI();
+            },
+
+            addXP: function(amount, reason) {
+                this.stats.xp += amount;
+                this.checkLevelUp();
+                this.save();
+                this.updateUI();
+                showToast(`+${amount} XP: ${reason}`, 'success');
+            },
+
+            checkLevelUp: function() {
+                // Simple level logic: Level = 1 + floor(XP / 500)
+                const newLevel = 1 + Math.floor(this.stats.xp / 500);
+                if (newLevel > this.stats.level) {
+                    this.stats.level = newLevel;
+                    showToast(`Level Up! You are now level ${newLevel}`, 'info');
+                }
+            },
+
+            markVerified: function(pid) {
+                if(!this.verifiedPids.includes(pid)) {
+                    this.verifiedPids.push(pid);
+                    this.stats.verifiedCount++;
+                    this.addXP(50, "Manual Verification"); // Bonus XP for manual check
+                    this.save();
+                    return true;
+                }
+                return false;
+            },
+
+            unmarkVerified: function(pid) {
+                const idx = this.verifiedPids.indexOf(pid);
+                if(idx > -1) {
+                    this.verifiedPids.splice(idx, 1);
+                    this.stats.verifiedCount = Math.max(0, this.stats.verifiedCount - 1);
+                    // Penalize XP slightly? Maybe not, just don't refund.
+                    this.save();
+                    this.updateUI();
+                    return true;
+                }
+                return false;
+            },
+
+            isVerified: function(pid) {
+                return this.verifiedPids.includes(pid);
+            },
+
+            getRankName: function() {
+                const lvl = this.stats.level;
+                if(lvl < 2) return "Intern Validator";
+                if(lvl < 5) return "Junior Officer";
+                if(lvl < 10) return "Senior Asset Mgr";
+                if(lvl < 20) return "VP of Towers";
+                return "Master Validator";
+            },
+
+            save: function() {
+                localStorage.setItem('mitratel_user_stats', JSON.stringify(this.stats));
+                localStorage.setItem('mitratel_verified_pids', JSON.stringify(this.verifiedPids));
+            },
+
+            updateUI: function() {
+                document.getElementById('userLevel').innerText = `Lvl ${this.stats.level}`;
+                document.getElementById('userXp').innerText = this.stats.xp;
+                document.getElementById('userRank').innerText = this.getRankName();
+                
+                // XP Bar calculation (0-500 based for simple levels)
+                const currentLevelXp = this.stats.xp % 500;
+                const percentage = (currentLevelXp / 500) * 100;
+                document.getElementById('xpBar').style.width = `${percentage}%`;
+            }
+        };
+
+        // --- VISUALIZATION STATE ---
+        let vizScale = 1.0;
+
+        // --- INITIALIZATION ---
+        document.addEventListener("DOMContentLoaded", () => {
+            GameSystem.init();
+            
+            // Drag Scroll Logic
+            const scrollContainer = document.getElementById('viz-scroll-container');
+            let isDown = false;
+            let startX, startY, scrollLeft, scrollTop;
+
+            scrollContainer.addEventListener('mousedown', (e) => {
+                isDown = true;
+                scrollContainer.classList.add('active');
+                startX = e.pageX - scrollContainer.offsetLeft;
+                startY = e.pageY - scrollContainer.offsetTop;
+                scrollLeft = scrollContainer.scrollLeft;
+                scrollTop = scrollContainer.scrollTop;
+            });
+            
+            scrollContainer.addEventListener('mouseleave', () => { isDown = false; });
+            scrollContainer.addEventListener('mouseup', () => { isDown = false; });
+            
+            scrollContainer.addEventListener('mousemove', (e) => {
+                if(!isDown) return;
+                e.preventDefault();
+                const x = e.pageX - scrollContainer.offsetLeft;
+                const y = e.pageY - scrollContainer.offsetTop;
+                const walkX = (x - startX) * 1.5; 
+                const walkY = (y - startY) * 1.5;
+                scrollContainer.scrollLeft = scrollLeft - walkX;
+                scrollContainer.scrollTop = scrollTop - walkY;
+            });
+            
+            // Mouse Wheel Zoom
+            scrollContainer.addEventListener('wheel', (e) => {
+                if (e.ctrlKey) {
+                    e.preventDefault();
+                    if (e.deltaY < 0) changeZoom(0.1);
+                    else changeZoom(-0.1);
+                }
+            });
+        });
+
+        // --- ZOOM LOGIC ---
+        function changeZoom(delta) {
+            vizScale += delta;
+            if (vizScale < 0.2) vizScale = 0.2;
+            if (vizScale > 3.0) vizScale = 3.0;
+            applyZoom();
+        }
+
+        function resetZoom() {
+            vizScale = 1.0;
+            applyZoom();
+        }
+
+        function applyZoom() {
+            const container = document.getElementById('viz-scale-container');
+            container.style.transform = `scale(${vizScale})`;
+        }
+
+        // --- UI HANDLERS ---
+        function toggleGuide() { document.getElementById('guideModal').classList.toggle('hidden'); }
+        function closeModal() { document.getElementById('vizModal').classList.add('hidden'); }
+        
+        function toggleBatchMenu(e) {
+            e.stopPropagation();
+            document.getElementById('batchMenu').classList.toggle('hidden');
+        }
+
+        function toggleSapMenu(e) {
+            e.stopPropagation();
+            document.getElementById('sapMenu').classList.toggle('hidden');
+        }
+
+        function closeDropdowns(e) {
+            // Close Batch menu
+            if (!e.target.closest('#batchMenu') && !e.target.closest('button[onclick="toggleBatchMenu(event)"]')) {
+                document.getElementById('batchMenu').classList.add('hidden');
+            }
+            // Close SAP menu
+            if (!e.target.closest('#sapMenu') && !e.target.closest('button[onclick="toggleSapMenu(event)"]')) {
+                document.getElementById('sapMenu').classList.add('hidden');
+            }
+        }
+
+        // --- QUEUE SEARCH & FILTER LOGIC (NEW) ---
+        let currentQueueFilter = 'all';
+
+        function setQueueFilter(status) {
+            currentQueueFilter = status;
+            
+            // Update Buttons
+            ['all', 'pass', 'fail'].forEach(s => {
+                const btn = document.getElementById(`filter-btn-${s}`);
+                if (s.toUpperCase() === status.toUpperCase() || (s === 'all' && status === 'all')) {
+                    if(s === 'all') btn.className = "px-3 py-1.5 text-xs font-bold rounded-lg bg-slate-800 text-white shadow-md transform scale-105 transition-all";
+                    if(s === 'pass') btn.className = "px-3 py-1.5 text-xs font-bold rounded-lg bg-green-500 text-white shadow-md transform scale-105 transition-all";
+                    if(s === 'fail') btn.className = "px-3 py-1.5 text-xs font-bold rounded-lg bg-mitratel-red text-white shadow-md transform scale-105 transition-all";
+                } else {
+                    btn.className = "px-3 py-1.5 text-xs font-bold rounded-lg text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700 transition-all";
+                }
+            });
+
+            filterQueueTable();
+        }
+
+        function filterQueueTable() {
+            const input = document.getElementById('queueSearch');
+            const filter = input.value.toUpperCase();
+            const table = document.getElementById('result-body');
+            const tr = table.getElementsByTagName('tr');
+
+            for (let i = 0; i < tr.length; i++) {
+                // Column 1 is Filename/PID, Column 2 is Status
+                const tdName = tr[i].getElementsByTagName("td")[1]; 
+                const tdStatus = tr[i].getElementsByTagName("td")[2]; 
+                
+                if (tdName && tdStatus) {
+                    const txtValue = tdName.textContent || tdName.innerText;
+                    const statusText = tdStatus.textContent || tdStatus.innerText;
+                    
+                    const matchesSearch = txtValue.toUpperCase().indexOf(filter) > -1;
+                    let matchesFilter = true;
+
+                    if (currentQueueFilter !== 'all') {
+                        if (!statusText.toUpperCase().includes(currentQueueFilter.toUpperCase())) {
+                            matchesFilter = false;
+                        }
+                    }
+
+                    if (matchesSearch && matchesFilter) {
+                        tr[i].style.display = "";
+                        tr[i].classList.add("animate-fade-in"); // Add subtle animation
+                    } else {
+                        tr[i].style.display = "none";
+                        tr[i].classList.remove("animate-fade-in");
+                    }
+                }       
+            }
+        }
+
+        // --- TOAST NOTIFICATION ---
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            
+            let bgClass = type === 'success' ? 'bg-emerald-500' : 'bg-blue-500';
+            if (type === 'error') bgClass = 'bg-red-500';
+
+            toast.className = `toast ${bgClass} text-white px-4 py-3 rounded-lg shadow-lg text-sm font-medium flex items-center gap-2`;
+            toast.innerHTML = `<i class="fa-solid fa-bell"></i> <span>${message}</span>`;
+            
+            container.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateY(20px)';
+                setTimeout(() => container.removeChild(toast), 300);
+            }, 3000);
+        }
+
+        // --- VERIFICATION LOGIC ---
+        function toggleVerification() {
+            const pid = appState.targetPID;
+            if(!pid) return;
+
+            const btn = document.getElementById('btnVerifyStructure');
+            
+            if (GameSystem.isVerified(pid)) {
+                // Unmark
+                GameSystem.unmarkVerified(pid);
+                updateVerifyButton(false);
+            } else {
+                // Mark
+                GameSystem.markVerified(pid);
+                updateVerifyButton(true);
+            }
+            
+            // Refresh table row indicator if visible
+            const rowId = appState.processed[Object.keys(appState.processed).find(k => appState.processed[k].pid === pid)]?.rowId;
+            if(rowId) updateTableRowVerifiedStatus(rowId, pid);
+        }
+
+        function updateVerifyButton(isVerified) {
+            const btn = document.getElementById('btnVerifyStructure');
+            if (isVerified) {
+                btn.className = "hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wide border transition-all bg-green-100 text-green-700 border-green-200 hover:bg-green-200";
+                btn.innerHTML = `<i class="fa-solid fa-circle-check"></i> Structure Verified`;
+            } else {
+                btn.className = "hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wide border transition-all bg-white dark:bg-gray-800 text-gray-500 border-gray-300 dark:border-gray-600 hover:border-mitratel-red hover:text-mitratel-red";
+                btn.innerHTML = `<i class="fa-regular fa-square"></i> Mark Verified`;
+            }
+        }
+
+        function updateTableRowVerifiedStatus(rowId, pid) {
+            const row = document.getElementById(rowId);
+            if(!row) return;
+            // Column 4 is "Verified"
+            const cell = row.cells[3]; 
+            if(GameSystem.isVerified(pid)) {
+                cell.innerHTML = `<span class="text-emerald-500 text-lg" title="Manually Verified"><i class="fa-solid fa-circle-check"></i></span>`;
+            } else {
+                cell.innerHTML = `<span class="text-gray-300 text-lg"><i class="fa-regular fa-circle"></i></span>`;
+            }
+        }
+
+        // --- CLEAR QUEUE FUNCTION ---
+        function clearValidatorQueue() {
+            if(!confirm("Are you sure you want to clear all files from the queue?")) return;
+
+            appState.queue = [];
+            appState.processed = {};
+            appState.processedKeys = [];
+            appState.stats = { total: 0, pass: 0, fail: 0 };
+            
+            // Clear UI
+            document.getElementById('result-body').innerHTML = '';
+            document.getElementById('btnStartValidation').classList.add('hidden');
+            document.getElementById('summary-dashboard').classList.add('hidden');
+            document.getElementById('groupActions').classList.add('hidden');
+            document.getElementById('btnClearFiles').classList.add('hidden');
+            
+            // Reset File Input
+            document.getElementById('fileElem').value = '';
+        }
+
+        // --- SAP TXT helpers --- (Unchanged)
+        function sanitizeForTsvCell(val) {
+            if (val === null || val === undefined) return '';
+            return String(val)
+                .replace(/\t/g, ' ')
+                .replace(/\r?\n/g, ' ')
+                .trim();
+        }
+
+        function buildSapTxtFromRows(rows, headerOrder) {
+            if (!rows || rows.length === 0) return '';
+            const cols = headerOrder && headerOrder.length ? headerOrder : Object.keys(rows[0]);
+            const headerLine = cols.join('\t');
+            const bodyLines = rows.map(r => cols.map(c => sanitizeForTsvCell(r[c])).join('\t'));
+            return [headerLine, ...bodyLines].join('\r\n');
+        }
+
+        function triggerTextDownload(content, filename) {
+            const blob = new Blob([content], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function downloadSapTxt(fileName) {
+            const item = appState.processed[fileName];
+            if (!item || !item.sapTxt) {
+                alert("SAP TXT belum tersedia untuk file ini.");
+                return;
+            }
+            const base = item.pid || fileName.replace(/\.[^/.]+$/, "");
+            triggerTextDownload(item.sapTxt, base + ".txt");
+        }
+
+        async function downloadSapBatch(type, mode) {
+            if (Object.keys(appState.processed).length === 0) {
+                alert("Belum ada file yang diproses.");
+                return;
+            }
+
+            const eligible = Object.values(appState.processed).filter(item => {
+                if (type === 'all') return true;
+                if (type === 'pass') return item.status === 'PASS';
+                if (type === 'fail') return item.status === 'FAIL';
+                return false;
+            });
+
+            if (eligible.length === 0) {
+                alert("Tidak ada file yang sesuai kriteria.");
+                return;
+            }
+
+            if (mode === 'merge') {
+                const mergedNameInput = document.getElementById('sapMergedFilename')?.value?.trim();
+                const firstBase = eligible[0].pid || eligible[0].fileName.replace(/\.[^/.]+$/, "");
+                let outName = mergedNameInput || (firstBase + "_SAP_MERGED_PASS.txt");
+                if (!outName.toLowerCase().endsWith('.txt')) outName += '.txt';
+
+                const mergedLines = [];
+                for (let i = 0; i < eligible.length; i++) {
+                    const item = eligible[i];
+                    if (!item.sapTxt) continue;
+                    const lines = item.sapTxt.split(/\r?\n/);
+                    if (lines.length === 0) continue;
+                    if (mergedLines.length === 0) mergedLines.push(...lines);
+                    else mergedLines.push(...lines.slice(1)); // skip header
+                }
+
+                if (mergedLines.length === 0) {
+                    alert("Tidak ada konten SAP TXT yang bisa digabung.");
+                    return;
+                }
+                triggerTextDownload(mergedLines.join('\r\n'), outName);
+                return;
+            }
+
+            // Separate downloads
+            if (!confirm(`Akan mengunduh ${eligible.length} file TXT. Pastikan Anda mengizinkan 'Automatic Downloads' di browser Anda.
+
+Lanjutkan?`)) {
+                return;
+            }
+
+            for (let i = 0; i < eligible.length; i++) {
+                const item = eligible[i];
+                if (!item.sapTxt) continue;
+                const base = item.pid || item.fileName.replace(/\.[^/.]+$/, "");
+                triggerTextDownload(item.sapTxt, base + ".txt");
+                await new Promise(resolve => setTimeout(resolve, 250));
+            }
+        }
+
+        const dropArea = document.getElementById('drop-area');
+        const fileElem = document.getElementById('fileElem');
+
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(evt => {
+            dropArea.addEventListener(evt, e => { e.preventDefault(); e.stopPropagation(); }, false);
+        });
+
+        dropArea.addEventListener('drop', handleDrop, false);
+        dropArea.addEventListener('click', () => fileElem.click());
+        fileElem.addEventListener('change', (e) => handleFiles(e.target.files), false);
+
+        function handleDrop(e) { handleFiles(e.dataTransfer.files); }
+
+        function handleFiles(files) {
+            const tbody = document.getElementById('result-body');
+            let added = false;
+            
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                const fileId = `file-${Date.now()}-${i}`;
+                appState.queue.push({ file, id: fileId });
+                added = true;
+
+                // --- REVISI: Extract PID Cleaner from Filename for Display ---
+                const nameBase = file.name.split('.').slice(0, -1).join('.');
+                // Try finding standard pattern first
+                const pidMatch = nameBase.match(/\b\d{2}[A-Z]{2}\d{2}[A-Z]\d{4}\b/i);
+                let targetPid = pidMatch ? pidMatch[0].toUpperCase() : nameBase;
+                
+                // Fallback cleanup if pattern not found but likely has prefix
+                if (!pidMatch) {
+                    if (targetPid.toUpperCase().startsWith("VALIDATED_")) targetPid = targetPid.substring(10);
+                    else if (targetPid.toUpperCase().startsWith("REVISI_")) targetPid = targetPid.substring(7);
+                }
+
+                const tr = document.createElement('tr');
+                tr.id = fileId;
+                tr.className = "hover:bg-gray-50 dark:hover:bg-gray-800/50 transition border-b border-gray-50 dark:border-gray-800";
+                
+                // Added Verified Column in HTML
+                tr.innerHTML = `
+                    <td class="py-4 px-6 text-sm text-gray-400 font-mono">${tbody.children.length + 1}</td>
+                    <td class="py-4 px-6 text-sm font-semibold text-slate-700 dark:text-gray-200">
+                        ${file.name}
+                        <br><span class="text-[10px] uppercase font-bold text-gray-500 bg-gray-100 dark:bg-gray-700 dark:text-gray-400 px-1.5 py-0.5 rounded tracking-wide mt-1 inline-block">ID: ${targetPid}</span>
+                    </td>
+                    <td class="py-4 px-6 text-center text-xs font-bold text-gray-400 bg-gray-50 dark:bg-gray-800 rounded-lg">Pending</td>
+                    <td class="py-4 px-6 text-center text-gray-300">-</td>
+                    <td class="py-4 px-6 text-sm text-gray-400 italic">Ready to process...</td>
+                    <td class="py-4 px-6 text-center text-gray-300">-</td>
+                `;
+                tbody.appendChild(tr);
+            }
+
+            if (added) {
+                document.getElementById('btnStartValidation').classList.remove('hidden');
+                document.getElementById('btnClearFiles').classList.remove('hidden');
+                document.getElementById('summary-dashboard').classList.remove('hidden');
+                
+                // Re-apply filter if user adds files while filter is active
+                if(window.currentQueueFilter && window.currentQueueFilter !== 'all') {
+                    setTimeout(filterQueueTable, 100);
+                }
+            }
+        }
+
+        async function startBatchValidation() {
+            const btn = document.getElementById('btnStartValidation');
+            btn.disabled = true;
+            btn.classList.add('opacity-50', 'cursor-not-allowed');
+            btn.innerHTML = `<span class="loader border-t-white mr-2" style="width:16px;height:16px;border-width:2px;"></span> Processing...`;
+
+            appState.stats.total = 0;
+            appState.stats.pass = 0;
+            appState.stats.fail = 0;
+            updateDashboardUI();
+
+            for (const item of appState.queue) {
+                await processFile(item.file, item.id);
+            }
+            
+            appState.queue = []; 
+            btn.innerHTML = "<i class='fa-solid fa-check mr-2'></i> Done";
+            document.getElementById('groupActions').classList.remove('hidden');
+
+            setTimeout(() => { 
+                btn.classList.add('hidden'); 
+                btn.disabled = false;
+                btn.classList.remove('opacity-50', 'cursor-not-allowed');
+                btn.innerHTML = `<i class='fa-solid fa-play mr-2 text-xs'></i> Start Validation`;
+            }, 2000);
+        }
+
+        function updateDashboardUI() {
+            document.getElementById('stat-total').innerText = appState.stats.total;
+            document.getElementById('stat-pass').innerText = appState.stats.pass;
+            document.getElementById('stat-fail').innerText = appState.stats.fail;
+            
+            document.getElementById('badge-all').innerText = appState.stats.total;
+            document.getElementById('badge-pass').innerText = appState.stats.pass;
+            document.getElementById('badge-fail').innerText = appState.stats.fail;
+
+            // SAP badge mirrors
+            const sapAll = document.getElementById('badge-sap-all');
+            const sapPass = document.getElementById('badge-sap-pass');
+            if (sapAll) sapAll.innerText = appState.stats.total;
+            if (sapPass) sapPass.innerText = appState.stats.pass;
+        }
+
+        function downloadSummaryReport() {
+            if (Object.keys(appState.processed).length === 0) {
+                alert("Tidak ada data validasi untuk diunduh.");
+                return;
+            }
+
+            const summaryData = Object.values(appState.processed).map((item, index) => ({
+                No: index + 1,
+                Nama_File: item.fileName,
+                Status: item.status, 
+                Verified: GameSystem.isVerified(item.pid) ? "YES" : "NO",
+                Total_Error: item.errors ? item.errors.length : 0,
+                Message: item.status === "PASS" ? "Semua aturan terpenuhi" : "Cek log error untuk detail"
+            }));
+
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.json_to_sheet(summaryData);
+            ws['!cols'] = [{wch: 5}, {wch: 30}, {wch: 10}, {wch: 10}, {wch: 15}, {wch: 40}];
+
+            XLSX.utils.book_append_sheet(wb, ws, "SUMMARY");
+            XLSX.writeFile(wb, "SUMMARY_REPORT.xlsx");
+        }
+
+        async function downloadBatch(type) {
+            const filesToDownload = [];
+            if (Object.keys(appState.processed).length === 0) {
+                alert("Belum ada file yang diproses.");
+                return;
+            }
+
+            for (const key in appState.processed) {
+                const item = appState.processed[key];
+                let shouldAdd = false;
+
+                if (type === 'all') shouldAdd = true;
+                else if (type === 'pass' && item.status === 'PASS') shouldAdd = true;
+                else if (type === 'fail' && item.status === 'FAIL') shouldAdd = true;
+
+                if (shouldAdd) {
+                    filesToDownload.push({
+                        fileName: "VALIDATED_" + item.fileName,
+                        wb: item.wb
+                    });
+                }
+            }
+
+            if (filesToDownload.length === 0) {
+                alert("Tidak ada file yang sesuai kriteria.");
+                return;
+            }
+
+            if (!confirm(`Akan mengunduh ${filesToDownload.length} file. Pastikan Anda mengizinkan 'Automatic Downloads' di browser Anda.\n\nLanjutkan?`)) {
+                return;
+            }
+
+            for (let i = 0; i < filesToDownload.length; i++) {
+                const file = filesToDownload[i];
+                downloadSingleExcel(file.wb, file.fileName);
+                await new Promise(resolve => setTimeout(resolve, 500));
+            }
+        }
+
+        function downloadSingleExcel(wb, fileName) {
+            const excelData = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+            const blob = new Blob([excelData], { type: "application/octet-stream" });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            
+            setTimeout(() => {
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+            }, 100);
+        }
+
+        const isEmpty = (x) => (x === null || x === undefined || String(x).trim() === "");
+        const excelRow = (i) => i + 2;
+
+        async function processFile(file, rowId) {
+            const row = document.getElementById(rowId);
+            const statusCell = row.cells[2];
+            const verifiedCell = row.cells[3]; // New column index
+            const msgCell = row.cells[4];
+            const actionCell = row.cells[5];
+
+            statusCell.innerHTML = `<span class="loader"></span>`;
+            msgCell.innerText = "Running checks...";
+
+            try {
+                // ... (Excel Processing Logic - Unchanged) ...
+                const arrayBuffer = await file.arrayBuffer();
+                const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+                
+                if (!workbook.SheetNames.includes('below_ring')) throw new Error("Sheet 'below_ring' tidak ditemukan.");
+                
+                let rawBelow = XLSX.utils.sheet_to_json(workbook.Sheets['below_ring'], { defval: "" });
+                
+                let belowData = rawBelow.map(r => {
+                    const newRow = {};
+                    Object.keys(r).forEach(k => {
+                        const upperK = k.toUpperCase().trim();
+                        if (['PID', 'RING_ID'].includes(upperK)) return; 
+                        newRow[upperK] = r[k];
+                    });
+                    return newRow;
+                });
+
+                const required = ['STRNO', 'PLTXT', 'ABCKZ'];
+                const missing = required.filter(c => !Object.keys(belowData[0] || {}).includes(c));
+                if (missing.length) throw new Error(`Kolom hilang di below_ring: ${missing.join(', ')}`);
+
+                belowData.sort((a, b) => {
+                    const sa = String(a.STRNO || "");
+                    const sb = String(b.STRNO || "");
+                    return sa.localeCompare(sb);
+                });
+
+                belowData.forEach(r => {
+                    const s = String(r.STRNO || "");
+                    const len = (s.toLowerCase() === "<na>" || s === "") ? 0 : s.length;
+                    r.STRNO_LENGTH = len;
+                });
+
+                const errors = [];
+                const rule5_Allowed = [17, 21, 26, 30];
+                const seenStrno = new Set();
+                const duplicates = new Set();
+
+                belowData.forEach((r, i) => {
+                    const len = r.STRNO_LENGTH;
+                    const strno = String(r.STRNO || "").trim();
+                    const abckz = String(r.ABCKZ || "").trim().toUpperCase();
+
+                    if (!rule5_Allowed.includes(len)) {
+                        errors.push({ Rule: "R5_LENGTH", Row: excelRow(i), Message: `Panjang ${len} tidak valid. STRNO: ${strno}` });
+                    }
+                    if (seenStrno.has(strno)) {
+                        duplicates.add(strno);
+                        errors.push({ Rule: "R9_DUPLICATE", Row: excelRow(i), Message: `Duplikat STRNO: ${strno}` });
+                    } else {
+                        seenStrno.add(strno);
+                    }
+                    const baseMap = { 17: "P", 21: "S", 30: "O" };
+                    if (baseMap[len]) {
+                        if (abckz !== baseMap[len]) {
+                            errors.push({ Rule: "R7_ABCKZ", Row: excelRow(i), Message: `Len ${len} harus ABCKZ='${baseMap[len]}', tapi tertulis '${abckz}'` });
+                        }
+                    } else if (len === 26) {
+                        if (strno.length >= 4) {
+                            const code = strno.slice(-4, -2).toUpperCase();
+                            const suffixMap = {"KU": "U", "JC": "R", "OB": "B", "OP": "L", "OC": "M", "OL": "J", "KT": "N", "TP": "H"};
+                            if (suffixMap[code]) {
+                                if (abckz !== suffixMap[code]) {
+                                    errors.push({ Rule: "R7_ABCKZ", Row: excelRow(i), Message: `Len 26 (Code ${code}) harus ABCKZ='${suffixMap[code]}', tapi tertulis '${abckz}'` });
+                                }
+                            }
+                        }
+                    }
+                });
+
+                let segmentBuffer = [];
+                for (let i = 0; i <= belowData.length; i++) {
+                    const r = belowData[i];
+                    const is30 = r && r.STRNO_LENGTH === 30;
+
+                    if (is30) {
+                        segmentBuffer.push({ idx: i, pltxt: r.PLTXT, strno: r.STRNO });
+                    } else {
+                        if (segmentBuffer.length > 0) {
+                            const allEmpty = segmentBuffer.every(item => isEmpty(item.pltxt));
+                            if (allEmpty) {
+                                const startRow = excelRow(segmentBuffer[0].idx);
+                                const endRow = excelRow(segmentBuffer[segmentBuffer.length-1].idx);
+                                errors.push({ 
+                                    Rule: "R6_SEGMENT_EMPTY", 
+                                    Row: `${startRow}-${endRow}`, 
+                                    Message: `Segmen Core (30) kosong semua tenant-nya. ${segmentBuffer[0].strno} ...` 
+                                });
+                            }
+                        }
+                        segmentBuffer = [];
+                    }
+                }
+
+                let displayData = [];
+                if (workbook.SheetNames.includes('display_ring')) {
+                    const rawDisplay = XLSX.utils.sheet_to_json(workbook.Sheets['display_ring'], { defval: "" });
+                    displayData = rawDisplay.map(r => {
+                        const newRow = {};
+                        // Keep ALL columns, just uppercase keys for consistency
+                        Object.keys(r).forEach(k => newRow[k.toUpperCase().trim()] = r[k]);
+                        return newRow;
+                    });
+
+                    // Variables for Rule 11 (PID Inconsistency) - REVISED logic (Map PID->Count)
+                    let lastSpan = null;
+                    let lastPidCounts = {}; // { "PID1": count, "PID2": count }
+
+                    const colsCheck = ["LINK_DESCRIPTION", "LINK_FRM_FLOC", "LINK_TO_FLOC", "FUNCTIONAL_LOCATION_LINK_OBJECT"];
+                    displayData.forEach((r, i) => {
+                        colsCheck.forEach(col => {
+                            if (r[col]) { // Check if col exists in row
+                                const val = String(r[col] || "").trim();
+                                if (val && !seenStrno.has(val)) {
+                                    errors.push({ 
+                                        Rule: "R10_CROSS_CHECK", 
+                                        Row: excelRow(i), 
+                                        Message: `Sheet 'display_ring' kol '${col}': Nilai '${val}' tidak ditemukan di 'below_ring'.` 
+                                    });
+                                }
+                            }
+                        });
+
+                        const cableId = r['LINK_DESCRIPTION'];
+                        if (cableId) {
+                            const cores = belowData.filter(b => {
+                                const s = String(b.STRNO || "");
+                                const p = String(b.PLTXT || "");
+                                return s.startsWith(cableId) && s.length >= 30 && p && p.trim() !== "";
+                            });
+                            
+                            const currentPidCounts = {};
+                            cores.forEach(c => {
+                                const pid = c.PLTXT;
+                                currentPidCounts[pid] = (currentPidCounts[pid] || 0) + 1;
+                            });
+
+                            const parts = cableId.split('-');
+                            let currentSpan = parts.find(p => p.startsWith('S') && p.length <= 4 && !isNaN(p.substring(1))) || "UNK";
+                            if (currentSpan === "UNK" && parts.length > 3) currentSpan = parts[3]; 
+
+                            if (lastSpan && currentSpan !== "UNK" && currentSpan !== lastSpan) {
+                                for (const pid in lastPidCounts) {
+                                    if (currentPidCounts.hasOwnProperty(pid)) {
+                                        const countLast = lastPidCounts[pid];
+                                        const countCurr = currentPidCounts[pid];
+                                        if (countLast !== countCurr) {
+                                            errors.push({
+                                                Rule: "R11_PID_CONSISTENCY",
+                                                Row: excelRow(i),
+                                                Message: `Inkonsistensi PID ${pid}: Span ${lastSpan} (${countLast} core) -> Span ${currentSpan} (${countCurr} core).`
+                                            });
+                                        }
+                                    }
+                                }
+                            }
+                            lastSpan = currentSpan;
+                            lastPidCounts = currentPidCounts;
+                        }
+                    });
+                }
+
+                const isPass = errors.length === 0;
+                const statusStr = isPass ? "PASS" : "FAIL";
+
+                appState.stats.total++;
+                if(isPass) {
+                    appState.stats.pass++;
+                    GameSystem.addXP(10, "Validation Passed");
+                } else {
+                    appState.stats.fail++;
+                }
+                updateDashboardUI();
+
+                const newWb = XLSX.utils.book_new();
+                
+                // --- CLEAN DATA FOR EXPORT (Remove STRNO_LENGTH) ---
+                const exportBelowData = belowData.map(r => {
+                    const { STRNO_LENGTH, ...rest } = r;
+                    return rest;
+                });
+
+                const allKeys = Object.keys(exportBelowData[0]);
+                const headerOrder = ['STRNO', ...allKeys.filter(k => k!=='STRNO')]; // STRNO first, others follow
+                
+                // --- Build SAP-ready TXT (TSV + CRLF) ---
+                const sapTxt = buildSapTxtFromRows(exportBelowData, headerOrder);
+
+                
+                const wsBelow = XLSX.utils.json_to_sheet(exportBelowData, { header: headerOrder });
+                XLSX.utils.book_append_sheet(newWb, wsBelow, "below_ring");
+
+                if (displayData.length) {
+                    const wsDisplay = XLSX.utils.json_to_sheet(displayData);
+                    XLSX.utils.book_append_sheet(newWb, wsDisplay, "display_ring");
+                }
+
+                if (errors.length > 0) {
+                    const wsErr = XLSX.utils.json_to_sheet(errors);
+                    XLSX.utils.book_append_sheet(newWb, wsErr, "ERROR_LOG");
+                }
+
+                const summary = [
+                    { ITEM: "STATUS", VALUE: statusStr },
+                    { ITEM: "TOTAL_ERRORS", VALUE: errors.length },
+                    { ITEM: "CHECKED_SHEETS", VALUE: "below_ring, display_ring" }
+                ];
+                const wsSum = XLSX.utils.json_to_sheet(summary);
+                XLSX.utils.book_append_sheet(newWb, wsSum, "VALIDATION_SUMMARY");
+
+                // --- REVISI: Extract Proper PID for internal storage/highlight ---
+                const nameBase = file.name.split('.').slice(0, -1).join('.');
+                const pidMatch = nameBase.match(/\b\d{2}[A-Z]{2}\d{2}[A-Z]\d{4}\b/i);
+                // Priority: Regex Match > Cleaned Prefix > Raw Filename
+                let pid = pidMatch ? pidMatch[0].toUpperCase() : nameBase;
+                if (!pidMatch) {
+                    if (pid.toUpperCase().startsWith("VALIDATED_")) pid = pid.substring(10);
+                    else if (pid.toUpperCase().startsWith("REVISI_")) pid = pid.substring(7);
+                }
+
+                appState.processed[file.name] = {
+                    fileName: file.name,
+                    wb: newWb, 
+                    belowData: belowData,
+                    displayData: displayData,
+                    pid: pid, // Use the clean PID
+                    status: statusStr,
+                    errors: errors,
+                    sapTxt: sapTxt,
+                    rowId: rowId // Store rowId for updating verification status
+                };
+                
+                appState.processedKeys = Object.keys(appState.processed);
+
+                const wbOut = XLSX.write(newWb, { bookType: 'xlsx', type: 'array' });
+                const blob = new Blob([wbOut], { type: "application/octet-stream" });
+                const url = URL.createObjectURL(blob);
+
+                const statusClass = isPass ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300" : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300";
+                statusCell.innerHTML = `<span class="${statusClass} py-1 px-3 rounded-md text-xs font-bold uppercase tracking-wider">${statusStr}</span>`;
+                
+                // Initialize Verification Cell
+                updateTableRowVerifiedStatus(rowId, pid);
+
+                msgCell.innerHTML = isPass ? "<span class='text-green-600 dark:text-green-400 font-medium'><i class='fa-solid fa-check-circle mr-1'></i> Validated Successfully</span>" : `<span class='text-red-600 dark:text-red-400 font-medium'><i class='fa-solid fa-triangle-exclamation mr-1'></i> Found ${errors.length} errors</span>`;
+
+                actionCell.innerHTML = `
+                    <div class="flex items-center justify-center gap-2">
+                        <button onclick="openVisualizer('${file.name}')" class="bg-slate-100 hover:bg-slate-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-slate-700 dark:text-white p-2 rounded-lg transition" title="Visualize">
+                           <i class="fa-solid fa-eye"></i>
+                        </button>
+                        <a href="${url}" download="VALIDATED_v4_${file.name}" class="bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-900/40 text-blue-600 dark:text-blue-300 p-2 rounded-lg transition" title="Download XLSX">
+                           <i class="fa-solid fa-file-excel"></i>
+                        </a>
+                        <button onclick="downloadSapTxt('${file.name}')" class="bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-900/20 dark:hover:bg-emerald-900/40 text-emerald-600 dark:text-emerald-300 p-2 rounded-lg transition" title="Download SAP TXT">
+                           <i class="fa-solid fa-file-code"></i>
+                        </button>
+                    </div>
+                `;
+                
+                // Re-apply filter if active (to hide/show this new row)
+                if(window.currentQueueFilter && window.currentQueueFilter !== 'all') {
+                    filterQueueTable();
+                } else if(document.getElementById('queueSearch').value.trim() !== "") {
+                    filterQueueTable();
+                }
+
+            } catch (err) {
+                console.error(err);
+                statusCell.innerHTML = `<span class="bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-300 py-1 px-3 rounded-md text-xs font-bold uppercase">Error</span>`;
+                msgCell.innerText = err.message;
+                verifiedCell.innerHTML = "-";
+                actionCell.innerHTML = "-";
+                appState.stats.total++;
+                appState.stats.fail++;
+                updateDashboardUI();
+            }
+        }
+
+        function navigateFile(direction) {
+            const newIndex = appState.currentFileIndex + direction;
+            if (newIndex >= 0 && newIndex < appState.processedKeys.length) {
+                const nextFileName = appState.processedKeys[newIndex];
+                openVisualizer(nextFileName);
+            }
+        }
+
+        function updateNavButtons() {
+            const btnPrev = document.getElementById('btnModalPrev');
+            const btnNext = document.getElementById('btnModalNext');
+            
+            btnPrev.disabled = appState.currentFileIndex <= 0;
+            btnNext.disabled = appState.currentFileIndex >= appState.processedKeys.length - 1;
+        }
+
+        function openVisualizer(fileName) {
+            const data = appState.processed[fileName];
+            if (!data) return;
+
+            appState.currentFileIndex = appState.processedKeys.indexOf(fileName);
+            updateNavButtons();
+
+            appState.targetPID = data.pid;
+            document.getElementById('modalFileName').innerText = fileName;
+            document.getElementById('targetPidDisplay').innerText = data.pid;
+            document.getElementById('vizModal').classList.remove('hidden');
+            
+            // Check verification status and update button
+            updateVerifyButton(GameSystem.isVerified(data.pid));
+
+            appState.currentData = data.belowData.map(r => ({
+                strno: String(r.STRNO || ""),
+                pltxt: String(r.PLTXT || ""),
+                abckz: String(r.ABCKZ || ""),
+                stort: String(r.STORT || ""), 
+                arbpl: String(r.ARBPL || "")
+            }));
+            appState.filteredData = [...appState.currentData];
+            appState.currentPage = 1;
+
+            switchTab('viz');
+            
+            vizScale = 1.0;
+            applyZoom();
+            
+            generateSVG(data.displayData, data.belowData, data.pid);
+            renderDisplayRingTable(data.displayData);
+            updatePaginationInfo();
+            renderErrorTable(data.errors);
+        }
+
+        function renderDisplayRingTable(displayData) {
+            const thead = document.getElementById('display-ring-head');
+            const tbody = document.getElementById('display-ring-body');
+            thead.innerHTML = '';
+            tbody.innerHTML = '';
+            
+            if (!displayData || displayData.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="px-6 py-8 text-center text-gray-400 italic">No Data Available in display_ring</td></tr>';
+                return;
+            }
+
+            // 1. Get All Keys (Columns) from first row
+            const allKeys = Object.keys(displayData[0]);
+            
+            // 2. Filter out PID and RING_ID (Case Insensitive logic handled by UpperCase keys)
+            const columns = allKeys.filter(k => k !== 'PID' && k !== 'RING_ID');
+
+            // 3. Render Header
+            let headerHTML = '<tr>';
+            columns.forEach(col => {
+                headerHTML += `<th class="px-4 py-3 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider sticky-header border-b border-gray-100 dark:border-gray-800">${col.replace(/_/g, ' ')}</th>`;
+            });
+            headerHTML += '</tr>';
+            thead.innerHTML = headerHTML;
+
+            // 4. Render Body
+            displayData.forEach(row => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-gray-50 dark:hover:bg-gray-800/50 transition";
+                let rowHTML = '';
+                columns.forEach(col => {
+                    rowHTML += `<td class="px-4 py-2 border-b border-gray-50 dark:border-gray-800 text-slate-600 dark:text-gray-300 whitespace-nowrap">${row[col] || '-'}</td>`;
+                });
+                tr.innerHTML = rowHTML;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function renderErrorTable(errors) {
+            const tbody = document.getElementById('error-table-body');
+            const badge = document.getElementById('error-badge');
+            const countDisplay = document.getElementById('error-count-display');
+            
+            tbody.innerHTML = '';
+            
+            if(!errors || errors.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="3" class="px-6 py-12 text-center text-gray-400 italic"><i class="fa-solid fa-check-circle text-4xl text-green-100 mb-2 block"></i>No validation errors found</td></tr>`;
+                badge.classList.add('hidden');
+                badge.innerText = '0';
+                countDisplay.innerText = '0 Issues Found';
+                countDisplay.className = "text-xs bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-300 px-3 py-1 rounded-full font-medium";
+                return;
+            }
+
+            badge.classList.remove('hidden');
+            badge.innerText = errors.length;
+            countDisplay.innerText = `${errors.length} Issues Found`;
+            countDisplay.className = "text-xs bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-300 px-3 py-1 rounded-full font-medium";
+
+            errors.forEach(err => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-red-50 dark:hover:bg-red-900/10 transition border-b border-red-50 dark:border-gray-800";
+                tr.innerHTML = `
+                    <td class="px-6 py-3 text-sm font-mono text-slate-500 dark:text-gray-400">${err.Row}</td>
+                    <td class="px-6 py-3 text-sm font-bold text-red-600 dark:text-red-400">${err.Rule}</td>
+                    <td class="px-6 py-3 text-sm text-slate-700 dark:text-gray-300">${err.Message}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function switchTab(tab) {
+            const btnViz = document.getElementById('tab-viz');
+            const btnDisplay = document.getElementById('tab-display');
+            const btnData = document.getElementById('tab-data');
+            const btnErrors = document.getElementById('tab-errors');
+            
+            const divViz = document.getElementById('content-viz');
+            const divDisplay = document.getElementById('content-display');
+            const divData = document.getElementById('content-data');
+            const divErrors = document.getElementById('content-errors');
+
+            // Reset Styles
+            [btnViz, btnDisplay, btnData, btnErrors].forEach(btn => {
+                btn.className = "nav-btn py-4 text-sm font-medium text-gray-500 hover:text-slate-800 dark:text-gray-400 dark:hover:text-white transition whitespace-nowrap";
+                btn.classList.remove('active', 'text-mitratel-red', 'font-semibold');
+            });
+            [divViz, divDisplay, divData, divErrors].forEach(div => div.classList.add('hidden'));
+
+            // Activate Selected
+            let activeBtn;
+            if (tab === 'viz') {
+                activeBtn = btnViz;
+                divViz.classList.remove('hidden');
+            } else if (tab === 'display') {
+                activeBtn = btnDisplay;
+                divDisplay.classList.remove('hidden');
+            } else if (tab === 'data') {
+                activeBtn = btnData;
+                divData.classList.remove('hidden');
+                renderTablePage();
+                updatePaginationInfo(); 
+            } else if (tab === 'errors') {
+                activeBtn = btnErrors;
+                divErrors.classList.remove('hidden');
+            }
+
+            activeBtn.classList.add('active', 'text-mitratel-red', 'font-semibold');
+            activeBtn.classList.remove('text-gray-500');
+        }
+
+        function filterTable() {
+            const term = document.getElementById('tableSearch').value.toLowerCase();
+            appState.filteredData = appState.currentData.filter(row => 
+                row.strno.toLowerCase().includes(term) || 
+                row.pltxt.toLowerCase().includes(term) ||
+                row.stort.toLowerCase().includes(term) || 
+                row.arbpl.toLowerCase().includes(term)
+            );
+            appState.currentPage = 1;
+            renderTablePage();
+            updatePaginationInfo();
+        }
+
+        function changePage(delta) {
+            const maxPage = Math.ceil(appState.filteredData.length / appState.rowsPerPage);
+            const newPage = appState.currentPage + delta;
+            if (newPage >= 1 && newPage <= maxPage) {
+                appState.currentPage = newPage;
+                renderTablePage();
+                updatePaginationInfo(); // FIX: Added missing call here
+            }
+        }
+
+        function updatePaginationInfo() {
+            const total = appState.filteredData.length;
+            const start = total === 0 ? 0 : (appState.currentPage - 1) * appState.rowsPerPage + 1;
+            const end = Math.min(appState.currentPage * appState.rowsPerPage, total);
+            
+            document.getElementById('totalRows').innerText = total;
+            document.getElementById('showStart').innerText = start;
+            document.getElementById('showEnd').innerText = end;
+            document.getElementById('pageIndicator').innerText = `Page ${appState.currentPage}`;
+            
+            document.getElementById('btnPrev').disabled = appState.currentPage === 1;
+            document.getElementById('btnPrev').classList.toggle('opacity-50', appState.currentPage === 1);
+            
+            const maxPage = Math.ceil(total / appState.rowsPerPage);
+            document.getElementById('btnNext').disabled = appState.currentPage >= maxPage;
+            document.getElementById('btnNext').classList.toggle('opacity-50', appState.currentPage >= maxPage);
+        }
+
+        function renderTablePage() {
+            const tbody = document.getElementById('data-table-body');
+            tbody.innerHTML = "";
+            const startIdx = (appState.currentPage - 1) * appState.rowsPerPage;
+            const pageData = appState.filteredData.slice(startIdx, startIdx + appState.rowsPerPage);
+
+            if (pageData.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="py-8 text-center text-gray-400 italic">No data found matching your search</td></tr>`;
+                return;
+            }
+
+            pageData.forEach(row => {
+                const tr = document.createElement('tr');
+                const isMatch = appState.targetPID && row.pltxt.includes(appState.targetPID);
+                if(isMatch) tr.classList.add('row-highlight');
+                tr.innerHTML = `
+                    <td class="py-2 px-6 text-sm font-mono text-slate-600 dark:text-gray-300">${row.strno}</td>
+                    <td class="py-2 px-6 text-sm text-slate-800 dark:text-white font-medium">${row.abckz}</td>
+                    <td class="py-2 px-6 text-sm ${isMatch ? 'font-bold text-mitratel-red' : 'text-slate-800 dark:text-white'}">${row.pltxt || '-'}</td>
+                    <td class="py-2 px-6 text-sm text-slate-500 dark:text-gray-400">${row.stort || '-'}</td>
+                    <td class="py-2 px-6 text-sm text-slate-500 dark:text-gray-400">${row.arbpl || '-'}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function generateSVG(displayData, belowData, targetPID) {
+            const container = document.getElementById('viz-scale-container');
+            container.innerHTML = '<div class="flex flex-col items-center justify-center h-full"><span class="loader mb-4"></span><p class="text-sm text-gray-500">Generating Topology...</p></div>';
+
+            // --- FIXED: SVG PATHS (Replaces unreliable Fonts) ---
+            const iconPaths = {
+                network: "M64 32C28.7 32 0 60.7 0 96v256c0 35.3 28.7 64 64 64h128v64H128c-17.7 0-32 14.3-32 32s14.3 32 32 32h256c17.7 0 32-14.3 32-32s-14.3-32-32-32H320v-64h128c35.3 0 64-28.7 64-64V96c0-35.3-28.7-64-64-64H64zM32 96c0-17.7 14.3-32 32-32h448c17.7 0 32 14.3 32 32v256c0 17.7-14.3 32-32 32H64c-17.7 0-32-14.3-32-32V96z",
+                circleDot: "M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zm0-352a96 96 0 1 1 0 192 96 96 0 1 1 0-192z",
+                box: "M32 32H288c17.7 0 32 14.3 32 32V96c0 17.7-14.3 32-32 32H32C14.3 128 0 113.7 0 96V64C0 46.3 14.3 32 32 32zm0 128H288V416c0 35.3-28.7 64-64 64H96c-35.3 0-64-28.7-64-64V160z",
+                plug: "M0 256a256 256 0 1 1 512 0A256 256 0 1 1 0 256z M188.3 147.1c-7.6 4.2-12.3 12.3-12.3 20.9V344c0 8.7 4.7 16.7 12.3 20.9s16.8 4.1 24.3-.5l144-88c7.1-4.4 11.5-12.1 11.5-20.5s-4.4-16.1-11.5-20.5l-144-88c-7.4-4.5-16.7-4.7-24.3-.5z", // Actually triangle play for generic
+                circle: "M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512z"
+            };
+
+            // --- 1. Helper Styles with Path Logic ---
+            const getNodeStyle = (type, label) => {
+                const t = (type || "").toUpperCase();
+                const l = (label || "").toUpperCase();
+                
+                // OTB/ODF (Insert Site/Termination) - Kotak (Server/Network)
+                if (t.includes("OTB") || l.includes("OTB")) 
+                    return { shape: "rect", fill: "#fffbeb", stroke: "#d97706", text: "#b45309", iconPath: iconPaths.network }; 
+                
+                // Closure (Sambungan) - Lingkaran (Circle Dot)
+                if (t.includes("CLOSURE") || l.includes("CLOSURE") || l.includes("JC")) 
+                    return { shape: "circle", fill: "#ffffff", stroke: "#1e293b", text: "#0f172a", iconPath: iconPaths.circleDot }; 
+                
+                // FDT/FAT - Hexagon (Box Archive)
+                if (t.includes("FDT") || l.includes("FDT") || t.includes("FAT")) 
+                    return { shape: "hexagon", fill: "#e0f2fe", stroke: "#0284c7", text: "#0369a1", iconPath: iconPaths.box }; 
+                
+                // ODP/Distribution Point
+                if (t.includes("ODP") || l.includes("ODP"))
+                    return { shape: "circle", fill: "#f0fdf4", stroke: "#15803d", text: "#166534", iconPath: iconPaths.plug }; 
+
+                // Default
+                return { shape: "circle", fill: "#ffffff", stroke: "#64748b", text: "#334155", iconPath: iconPaths.circle }; 
+            };
+
+            setTimeout(() => {
+                const nodeMap = new Map(); // id -> Node Object
+                const edges = [];
+                let currentX = 100;
+                const spacing = 350; // Increased spacing for cable boxes
+                const yPos = 300;
+
+                // Check actual dark mode status at render time
+                const isDark = document.documentElement.classList.contains('dark');
+
+                // --- 2. Data Parsing & Graph Building ---
+                displayData.forEach((row, idx) => {
+                    const parse = (floc, desc, type) => {
+                        if (!floc) return { span: "UNK", mat: "UNK", id: "UNK", type: "UNK" };
+                        
+                        const parts = floc.split('-');
+                        // Mencari Span ID (Sxxx)
+                        let span = parts.find(p => p.startsWith('S') && p.length <= 4 && !isNaN(p.substring(1))) || "UNK";
+                        
+                        // Fallback Span from Desc if present
+                        if(span === "UNK" && desc && desc.includes("-S")) {
+                             const dParts = desc.split('-');
+                             const dSpan = dParts.find(p => p.startsWith('S') && !isNaN(p.substring(1)));
+                             if(dSpan) span = dSpan;
+                        }
+
+                        let mat = desc ? desc : parts.pop();
+                        return { span, mat, id: floc, type: type || "GENERIC" };
+                    };
+
+                    const uData = parse(row['LINK_FRM_FLOC'], row['LINK_FROM_FUNCTIONAL_LOCATION_DESC'], row['FROM_OBJECT_NODE_TYPE']);
+                    const vData = parse(row['LINK_TO_FLOC'], row['LINK_TO_FUNCTIONAL_LOCATION_DESC'], row['TO_OBJECT_NODE_TYPE']);
+
+                    // Node Layout Logic
+                    let uNode = nodeMap.get(uData.id);
+                    let vNode = nodeMap.get(vData.id);
+
+                    if (!uNode) {
+                        uNode = { ...uData, x: currentX, y: yPos };
+                        nodeMap.set(uData.id, uNode);
+                        currentX += spacing;
+                    }
+
+                    if (!vNode) {
+                        vNode = { ...vData, x: uNode.x + spacing, y: yPos };
+                        nodeMap.set(vData.id, vNode);
+                        // Update global X to ensure next sequence doesn't overlap
+                        if(vNode.x >= currentX) currentX = vNode.x + spacing;
+                    }
+
+                    // Process Cores/Tenants
+                    const cableId = row['LINK_DESCRIPTION'];
+                    // --- REVISI: Ambil semua baris yang dimulai dengan ID Kabel ---
+                    const cableRows = belowData.filter(b => String(b.STRNO || "").startsWith(cableId));
+
+                    // --- REVISI: Logika Okupansi Core (Hanya yang memiliki PID/PLTXT) ---
+                    // Menghitung core yang memiliki nilai pada kolom PLTXT (PID/Project) dan bukan data sampah/kabel
+                    const occupiedCores = cableRows.filter(r => {
+                        const p = String(r.PLTXT || "").trim();
+                        // PLTXT tidak kosong dan bukan string "KABEL" (metadata)
+                        return p.length > 0 && !p.toUpperCase().includes("KABEL");
+                    });
+                    
+                    // --- PIDs Extraction (Tetap ambil dari cableRows untuk daftar aset lengkap) ---
+                    // Mengambil PID unik dari semua baris terkait kabel, kecuali yang mengandung kata "KABEL"
+                    const uniquePids = [...new Set(cableRows.map(c => c.PLTXT))].filter(p => 
+                        p && p.trim() !== "" && !p.toUpperCase().includes("KABEL")
+                    );
+
+                    // Extract Segment Name
+                    // Logic: Find pattern "Sxxx-xxx" in fullCableId (e.g. S10-020 from R04...S10-020-JC01)
+                    let segmentName = "SEG";
+                    const segMatch = cableId ? cableId.match(/S\d+-\d+/) : null;
+                    if (segMatch) {
+                        segmentName = segMatch[0];
+                    } else {
+                        // Fallback: try to grab last numeric part if S-pattern fails
+                        const parts = cableId ? cableId.split('-') : [];
+                        if (parts.length > 2) {
+                             // Attempt to construct something meaningful like S10-020
+                             // This depends heavily on naming convention consistency
+                             segmentName = parts.slice(-3, -1).join('-'); // Last 2 parts before type?
+                        }
+                    }
+
+                    edges.push({
+                        source: uData.id,
+                        target: vData.id,
+                        cableId: cableId ? cableId.split('-').pop() : "UNK", // Short Label
+                        fullCableId: cableId,
+                        segmentName: segmentName,
+                        pids: uniquePids,
+                        usedCores: occupiedCores.length // Gunakan hasil hitungan baru
+                    });
+                });
+
+                if (nodeMap.size === 0) {
+                    container.innerHTML = '<div class="flex flex-col items-center justify-center h-full text-gray-400"><i class="fa-solid fa-circle-exclamation text-4xl mb-2"></i><p>No Topology Data Found</p></div>';
+                    return;
+                }
+
+                // --- 3. Identify Intersections (Nodes between different Spans) ---
+                const nodesArr = Array.from(nodeMap.values());
+                // Group by Span to calculate Bounding Boxes
+                const spans = {};
+                
+                nodesArr.forEach(n => {
+                    if(n.span !== "UNK") {
+                        if (!spans[n.span]) spans[n.span] = { min: n.x, max: n.x, nodes: [] };
+                        else {
+                            spans[n.span].min = Math.min(spans[n.span].min, n.x);
+                            spans[n.span].max = Math.max(spans[n.span].max, n.x);
+                        }
+                        spans[n.span].nodes.push(n);
+                    }
+                });
+
+                const width = Math.max(...nodesArr.map(n => n.x)) + 300;
+                const height = 900; 
+
+                let svg = `<svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg" class="font-sans">`;
+                
+                svg += `
+                <defs>
+                    <marker id="arrow" markerWidth="10" markerHeight="10" refX="32" refY="3" orient="auto">
+                        <path d="M0,0 L0,6 L9,3 z" fill="#94a3b8" />
+                    </marker>
+                    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+                        <feDropShadow dx="2" dy="2" stdDeviation="3" flood-opacity="0.1"/>
+                    </filter>
+                </defs>`;
+
+                // --- 4. Draw Span Backgrounds (Behind everything) ---
+                const spanBgColors = isDark ? ['#1e293b', '#0f172a'] : ['#f8fafc', '#f1f5f9'];
+                const spanTextColor = isDark ? '#94a3b8' : '#64748b';
+
+                Object.keys(spans).sort().forEach((s, i) => {
+                    const g = spans[s];
+                    const pad = 100;
+                    
+                    const rectX = g.min - pad;
+                    const rectW = (g.max - g.min) + (pad * 2);
+                    
+                    // COMPACT RESIZE: Adjust Y and Height
+                    // Nodes are at yPos = 300.
+                    // We want box from ~180 to ~450 (height ~270)
+                    const rectY = yPos - 120; // 180
+                    const rectH = 280; 
+                    
+                    // Span Label
+                    svg += `<text x="${rectX + rectW/2}" y="${rectY - 20}" text-anchor="middle" font-weight="bold" fill="${spanTextColor}" font-size="20" style="text-transform:uppercase; letter-spacing: 2px;">SPAN ${s}</text>`;
+                    
+                    // Span Box
+                    svg += `<rect x="${rectX}" y="${rectY}" width="${rectW}" height="${rectH}" fill="${spanBgColors[i % 2]}" rx="20" stroke="${isDark?'#334155':'#e2e8f0'}" stroke-width="2" stroke-dasharray="10,5" />`;
+                });
+
+                // --- 5. Draw Edges (Cables) ---
+                edges.forEach(e => {
+                    const u = nodeMap.get(e.source);
+                    const v = nodeMap.get(e.target);
+                    const midX = (u.x + v.x) / 2;
+                    const midY = (u.y + v.y) / 2;
+
+                    // Main Cable Line
+                    svg += `<line x1="${u.x}" y1="${u.y}" x2="${v.x}" y2="${v.y}" stroke="#94a3b8" stroke-width="4" marker-end="url(#arrow)" />`;
+
+                    // Segment Name Label (Above Line)
+                    // COLOR FIX: Make segment name lighter/brighter in dark mode
+                    const segmentColor = isDark ? '#e2e8f0' : '#64748b';
+                    if (e.segmentName) {
+                        svg += `<text x="${midX}" y="${midY - 65}" text-anchor="middle" font-size="12" font-weight="bold" fill="${segmentColor}" style="letter-spacing: 1px;">${e.segmentName}</text>`;
+                    }
+
+                    // Cable ID Box (Intersection visualizer)
+                    const cableLabelColor = targetPID && e.fullCableId.includes(targetPID) ? "#EE2E24" : "#475569";
+                    const boxFill = isDark ? '#1e293b' : 'white';
+                    
+                    svg += `<rect x="${midX - 50}" y="${midY - 50}" width="100" height="24" fill="${boxFill}" stroke="${cableLabelColor}" stroke-width="1.5" rx="6" filter="url(#shadow)" />`;
+                    svg += `<text x="${midX}" y="${midY - 34}" text-anchor="middle" font-size="11" font-weight="bold" fill="${cableLabelColor}">${e.cableId}</text>`;
+
+                    // --- Tenant List / Cores Box ---
+                    const pids = e.pids.length ? e.pids : ["-"];
+                    // REVISED HEIGHT CALCULATION: Header + Rows + Footer
+                    const headerHeight = 30;
+                    const rowHeight = 16;
+                    const footerHeight = 24; // Space for "Used Cores: X"
+                    const listHeight = headerHeight + (pids.length * rowHeight) + footerHeight;
+                    const listY = midY + 25;
+                    
+                    // Box
+                    svg += `<rect x="${midX - 80}" y="${listY}" width="160" height="${listHeight}" class="pid-box" filter="url(#shadow)" />`;
+                    
+                    // Header (Brighten for Dark Mode)
+                    const headerColor = isDark ? '#4ade80' : '#15803d'; // Neon Green for dark mode
+                    svg += `<text x="${midX}" y="${listY + 18}" text-anchor="middle" font-size="10" font-weight="bold" fill="${headerColor}" style="text-decoration: underline">ASSETS</text>`;
+
+                    // PIDs
+                    pids.forEach((pid, idx) => {
+                        // --- REVISI HIGHLIGHT PID: Case Insensitive ---
+                        // Mencocokkan nama file (targetPID) dengan PID di dalam box secara case-insensitive
+                        const pNorm = pid.toUpperCase();
+                        const tNorm = targetPID ? targetPID.toUpperCase() : "";
+                        const isMatch = tNorm && pNorm.includes(tNorm);
+
+                        const color = isMatch ? "#EE2E24" : (isDark ? "#cbd5e1" : "#334155");
+                        const weight = isMatch ? "bold" : "normal";
+                        // Warna Highlight Kuning/Oranye (Sesuai v13)
+                        const bg = isMatch ? (isDark ? "#450a0a" : "#FEF2F2") : "none";
+                        
+                        if (isMatch) {
+                            svg += `<rect x="${midX - 75}" y="${listY + 24 + (idx*rowHeight)}" width="150" height="16" fill="${bg}" rx="3" />`;
+                        }
+                        
+                        let displayPid = pid.replace(/\(R\)/gi, ' [R]').replace(/\(r\)/gi, ' [R]');
+                        if(displayPid.length > 20) displayPid = displayPid.substring(0, 18) + '..';
+                        
+                        svg += `<text x="${midX}" y="${listY + 36 + (idx*rowHeight)}" text-anchor="middle" font-size="10" fill="${color}" font-weight="${weight}" font-family="monospace">${displayPid}</text>`;
+                    });
+
+                    // Footer (Okupansi Core) - REVISI LABEL
+                    const footerY = listY + headerHeight + (pids.length * rowHeight) + 14;
+                    const footerLineColor = isDark ? '#374151' : '#e2e8f0';
+                    const footerTextColor = isDark ? '#9ca3af' : '#64748b'; // Gray-400 : Slate-500
+                    
+                    svg += `<line x1="${midX - 70}" y1="${footerY - 10}" x2="${midX + 70}" y2="${footerY - 10}" stroke="${footerLineColor}" stroke-width="1" stroke-dasharray="3,3" />`;
+                    svg += `<text x="${midX}" y="${footerY}" text-anchor="middle" font-size="9" font-weight="bold" fill="${footerTextColor}">Okupansi Core: ${e.usedCores}</text>`;
+                });
+
+                // --- 6. Draw Nodes (Materials/Sites) ---
+                nodesArr.forEach(n => {
+                    const style = getNodeStyle(n.type, n.mat);
+                    const isIntersection = (n.mat.includes("OTB") || n.mat.includes("ODF")); 
+                    
+                    const size = isIntersection ? 70 : 50; 
+                    const iconSize = isIntersection ? 24 : 18;
+                    const offset = size / 2;
+
+                    // Shape Drawing
+                    if (style.shape === 'rect') {
+                        svg += `<rect x="${n.x - offset}" y="${n.y - offset}" width="${size}" height="${size}" fill="${style.fill}" stroke="${style.stroke}" stroke-width="3" rx="10" filter="url(#shadow)" />`;
+                    } else if (style.shape === 'hexagon') {
+                        const r = size / 1.7;
+                        const hexPath = `M${n.x + r*Math.cos(0)} ${n.y + r*Math.sin(0)} ` +
+                                        `L${n.x + r*Math.cos(Math.PI/3)} ${n.y + r*Math.sin(Math.PI/3)} ` +
+                                        `L${n.x + r*Math.cos(2*Math.PI/3)} ${n.y + r*Math.sin(2*Math.PI/3)} ` +
+                                        `L${n.x + r*Math.cos(Math.PI)} ${n.y + r*Math.sin(Math.PI)} ` +
+                                        `L${n.x + r*Math.cos(4*Math.PI/3)} ${n.y + r*Math.sin(4*Math.PI/3)} ` +
+                                        `L${n.x + r*Math.cos(5*Math.PI/3)} ${n.y + r*Math.sin(5*Math.PI/3)} Z`;
+                        svg += `<path d="${hexPath}" fill="${style.fill}" stroke="${style.stroke}" stroke-width="3" filter="url(#shadow)" />`;
+                    } else {
+                        svg += `<circle cx="${n.x}" cy="${n.y}" r="${size/2}" fill="${style.fill}" stroke="${style.stroke}" stroke-width="3" filter="url(#shadow)" />`;
+                    }
+
+                    // --- REPLACED: Icon Drawing using Path instead of Text Font ---
+                    const scaleFactor = 0.04; // Scale 512px path to approx 20px
+                    const scaledIconSize = 512 * scaleFactor;
+                    const translateX = n.x - (scaledIconSize / 2);
+                    const translateY = n.y - (scaledIconSize / 2);
+
+                    svg += `<g transform="translate(${translateX}, ${translateY}) scale(${scaleFactor})">
+                                <path d="${style.iconPath}" fill="${style.text}" />
+                            </g>`;
+
+                    // Labels
+                    svg += `<text x="${n.x}" y="${n.y - offset - 15}" text-anchor="middle" font-size="12" font-weight="bold" fill="${isDark?'#94a3b8':'#475569'}">${n.span}</text>`;
+                    
+                    let label = n.mat;
+                    if(label.length > 20) label = label.substring(0, 18) + '..';
+                    
+                    // COLOR FIX: More distinctive white in dark mode for Node Names + Shadow
+                    const labelColor = isDark ? '#ffffff' : '#1e293b';
+                    const textShadow = isDark ? 'style="text-shadow: 0px 1px 3px rgba(0,0,0,0.8);"' : ''; 
+                    
+                    svg += `<text x="${n.x}" y="${n.y + offset + 20}" text-anchor="middle" font-size="11" font-weight="bold" fill="${labelColor}" ${textShadow}>${label}</text>`;
+                });
+
+                svg += `</svg>`;
+                container.innerHTML = svg;
+
+            }, 200);
+        }
+    
+        // --- Main tab switching (Validator vs Converter) ---
+        (function setupMainTabs() {
+            const btnV = document.getElementById('tabBtnValidator');
+            const btnC = document.getElementById('tabBtnConverter');
+            const tabV = document.getElementById('tab-validator');
+            const tabC = document.getElementById('tab-converter');
+
+            if (!btnV || !btnC || !tabV || !tabC) return;
+
+            function setActive(which) {
+                const isV = which === 'validator';
+                tabV.classList.toggle('hidden', !isV);
+                tabC.classList.toggle('hidden', isV);
+
+                // Mitratel tab toggle style
+                if (isV) {
+                    btnV.classList.add('bg-gray-50', 'text-slate-900', 'shadow-sm', 'dark:bg-gray-700', 'dark:text-white');
+                    btnV.classList.remove('text-slate-500', 'hover:text-slate-900', 'dark:text-gray-400', 'dark:hover:text-white');
+                    
+                    btnC.classList.add('text-slate-500', 'hover:text-slate-900', 'dark:text-gray-400', 'dark:hover:text-white');
+                    btnC.classList.remove('bg-gray-50', 'text-slate-900', 'shadow-sm', 'dark:bg-gray-700', 'dark:text-white');
+                } else {
+                    btnC.classList.add('bg-gray-50', 'text-slate-900', 'shadow-sm', 'dark:bg-gray-700', 'dark:text-white');
+                    btnC.classList.remove('text-slate-500', 'hover:text-slate-900', 'dark:text-gray-400', 'dark:hover:text-white');
+                    
+                    btnV.classList.add('text-slate-500', 'hover:text-slate-900', 'dark:text-gray-400', 'dark:hover:text-white');
+                    btnV.classList.remove('bg-gray-50', 'text-slate-900', 'shadow-sm', 'dark:bg-gray-700', 'dark:text-white');
+                }
+            }
+
+            btnV.addEventListener('click', () => setActive('validator'));
+            btnC.addEventListener('click', () => setActive('converter'));
+        })();
+
+    </script>
+
+    <!-- Converter Script -->
+    <script>
+(function(){
+'use strict';
+// UI Elements
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const fileList = document.getElementById('fileList');
+        const fileListContainer = document.getElementById('fileListContainer');
+        const fileCountSpan = document.getElementById('fileCount');
+        const convertBtn = document.getElementById('convertBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const statusLog = document.getElementById('statusLog');
+        const modeInputs = document.querySelectorAll('input[name="outputMode"]');
+        const filenameContainer = document.getElementById('filenameContainer');
+        const customFilenameInput = document.getElementById('customFilename');
+        const dropIcon = document.getElementById('dropIcon');
+        const acceptText = document.getElementById('acceptText');
+        
+        // Mode Switchers
+        const modeExcelBtn = document.getElementById('modeExcel');
+        const modeTextBtn = document.getElementById('modeText');
+        
+        // State
+        let filesToProcess = [];
+        let currentInputMode = 'excel'; // 'excel' or 'text'
+
+        // --- Event Listeners for Source Switching ---
+        modeExcelBtn.addEventListener('click', () => switchSourceMode('excel'));
+        modeTextBtn.addEventListener('click', () => switchSourceMode('text'));
+
+        function switchSourceMode(mode) {
+            currentInputMode = mode;
+            filesToProcess = [];
+            updateUI();
+            statusLog.classList.add('hidden');
+            statusLog.innerHTML = '';
+
+            // Styling for active state
+            const activeClass = ['border-2', 'border-mitratel-red', 'bg-red-50', 'dark:bg-red-900/10', 'text-mitratel-red', 'font-semibold'];
+            const inactiveClass = ['border', 'border-gray-200', 'dark:border-gray-700', 'text-gray-500', 'dark:text-gray-400'];
+
+            if (mode === 'excel') {
+                modeExcelBtn.classList.add(...activeClass);
+                modeExcelBtn.classList.remove(...inactiveClass);
+                modeTextBtn.classList.remove(...activeClass);
+                modeTextBtn.classList.add(...inactiveClass);
+                
+                fileInput.accept = ".xlsx, .xls";
+                acceptText.innerText = "Accepts multiple .xlsx files";
+                dropIcon.className = "fa-solid fa-file-excel text-4xl text-emerald-500 mb-3 transition-colors";
+            } else {
+                modeTextBtn.classList.add(...activeClass);
+                modeTextBtn.classList.remove(...inactiveClass);
+                modeExcelBtn.classList.remove(...activeClass);
+                modeExcelBtn.classList.add(...inactiveClass);
+
+                fileInput.accept = ".txt, .tsv, .csv";
+                acceptText.innerText = "Accepts multiple .txt files";
+                dropIcon.className = "fa-solid fa-file-lines text-4xl text-slate-400 mb-3 transition-colors";
+            }
+        }
+
+        // --- Existing UI Logic ---
+
+        // Toggle Filename Input based on mode
+        modeInputs.forEach(input => {
+            input.addEventListener('change', (e) => {
+                if(e.target.value === 'merge') {
+                    filenameContainer.classList.remove('opacity-50', 'pointer-events-none');
+                    customFilenameInput.disabled = false;
+                } else {
+                    filenameContainer.classList.add('opacity-50', 'pointer-events-none');
+                    customFilenameInput.disabled = true;
+                    customFilenameInput.value = ''; // Clear when disabled
+                }
+            });
+        });
+
+        // Drag & Drop Effects
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, preventDefaults, false);
+        });
+
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropZone.addEventListener(eventName, () => dropZone.classList.add('dragover'), false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, () => dropZone.classList.remove('dragover'), false);
+        });
+
+        dropZone.addEventListener('drop', handleDrop, false);
+        fileInput.addEventListener('change', handleSelect, false);
+
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const newFiles = dt.files;
+            handleFiles(newFiles);
+        }
+
+        function handleSelect(e) {
+            const newFiles = e.target.files;
+            handleFiles(newFiles);
+        }
+
+        function handleFiles(files) {
+            if (!files.length) return;
+            filesToProcess = [...filesToProcess, ...Array.from(files)];
+            updateUI();
+        }
+
+        function updateUI() {
+            fileList.innerHTML = '';
+            fileCountSpan.textContent = filesToProcess.length;
+
+            if (filesToProcess.length > 0) {
+                fileListContainer.classList.remove('hidden');
+                convertBtn.disabled = false;
+                
+                filesToProcess.forEach((file, index) => {
+                    const size = (file.size / 1024).toFixed(1) + ' KB';
+                    const iconClass = currentInputMode === 'excel' ? 'fa-file-excel text-emerald-500' : 'fa-file-lines text-slate-500';
+                    const bgClass = currentInputMode === 'excel' ? 'bg-emerald-50 dark:bg-emerald-900/20' : 'bg-slate-100 dark:bg-slate-800';
+                    
+                    const div = document.createElement('div');
+                    div.className = 'flex items-center justify-between bg-white dark:bg-gray-900 p-3 rounded-xl border border-gray-100 dark:border-gray-700 group hover:border-mitratel-red/30 transition-colors';
+                    div.innerHTML = `
+                        <div class="flex items-center gap-3 overflow-hidden">
+                            <div class="w-10 h-10 rounded-lg ${bgClass} flex items-center justify-center ${iconClass} flex-shrink-0">
+                                <i class="fa-regular ${iconClass.split(' ')[0]}"></i>
+                            </div>
+                            <div class="truncate">
+                                <p class="font-medium text-slate-700 dark:text-gray-200 truncate text-sm" title="${file.name}">${file.name}</p>
+                                <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">${size}</p>
+                            </div>
+                        </div>
+                        <button onclick="removeFile(${index})" class="w-8 h-8 rounded-full hover:bg-red-50 dark:hover:bg-red-900/20 text-gray-400 hover:text-red-500 transition flex items-center justify-center">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    `;
+                    fileList.appendChild(div);
+                });
+            } else {
+                fileListContainer.classList.add('hidden');
+                convertBtn.disabled = true;
+            }
+        }
+
+        window.removeFile = (index) => {
+            filesToProcess.splice(index, 1);
+            updateUI();
+        }
+
+        clearBtn.addEventListener('click', () => {
+            filesToProcess = [];
+            updateUI();
+            statusLog.classList.add('hidden');
+            statusLog.innerHTML = '';
+        });
+
+        // --- Logic Helper ---
+
+        function getProjectID(filename) {
+            // Regex for pattern like 22IS12T0097 or 25UM11T2514
+            const regex = /\b\d{2}[A-Z]{2}\d{2}[A-Z]\d{4}\b/i;
+            const match = filename.match(regex);
+            if (match) return match[0];
+            return filename.replace(/\.[^/.]+$/, "");
+        }
+
+        function triggerDownload(content, filename) {
+            const blob = new Blob([content], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function log(msg, type = 'info') {
+            statusLog.classList.remove('hidden');
+            const color = type === 'error' ? 'text-red-600' : (type === 'success' ? 'text-emerald-600' : 'text-slate-600 dark:text-gray-400');
+            const div = document.createElement('div');
+            div.className = `${color} mb-1 flex items-start gap-2`;
+            div.innerHTML = `<span class="opacity-50 select-none">></span> <span>${msg}</span>`;
+            statusLog.appendChild(div);
+            statusLog.scrollTop = statusLog.scrollHeight;
+        }
+
+        // --- Data Processors ---
+
+        async function processExcelFile(file) {
+            const data = await file.arrayBuffer();
+            const workbook = XLSX.read(data, { type: 'array' });
+            
+            let sheetName = "below_ring";
+            if (!workbook.SheetNames.includes(sheetName)) {
+                sheetName = workbook.SheetNames[0];
+                log(`  Warning: "below_ring" not found in ${file.name}. Using "${sheetName}".`, 'info');
+            }
+
+            const worksheet = workbook.Sheets[sheetName];
+            const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: "" });
+            
+            if (!jsonData || jsonData.length === 0) return null;
+            return jsonData; // Returns Array of Arrays
+        }
+
+        async function processTextFile(file) {
+            const text = await file.text();
+            // Split by newline, filter out empty lines at the end if any
+            const lines = text.split(/\r?\n/);
+            // We want to return raw lines, but filter out pure empty string lines to avoid gaps
+            const validLines = lines.filter(line => line.trim() !== "");
+            
+            if (validLines.length === 0) return null;
+            return validLines; // Returns Array of Strings
+        }
+
+        // --- Main Convert Handler ---
+
+        convertBtn.addEventListener('click', async () => {
+            const mode = document.querySelector('input[name="outputMode"]:checked').value;
+            convertBtn.disabled = true;
+            convertBtn.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i> Processing...`;
+            statusLog.innerHTML = '';
+
+            try {
+                if (mode === 'merge') {
+                    await processMergeMode();
+                } else {
+                    await processSeparateMode();
+                }
+            } catch (error) {
+                log(`Critical Error: ${error.message}`, 'error');
+            } finally {
+                convertBtn.disabled = false;
+                convertBtn.innerHTML = `<span>Run Conversion</span> <i class="fa-solid fa-arrow-right"></i>`;
+            }
+        });
+
+        async function processMergeMode() {
+            let combinedData = [];
+            let headers = null; // For Excel
+            let headerLine = null; // For Text
+            let outputFilename = "batch_output.txt";
+
+            // Check Custom Filename
+            const customName = customFilenameInput.value.trim();
+            
+            for (let i = 0; i < filesToProcess.length; i++) {
+                const file = filesToProcess[i];
+                const isFirstFile = (i === 0);
+
+                // Filename logic
+                if (isFirstFile) {
+                    if (customName) {
+                        outputFilename = customName;
+                        if (!outputFilename.toLowerCase().endsWith('.txt')) {
+                            outputFilename += '.txt';
+                        }
+                    } else {
+                        const extractedID = getProjectID(file.name);
+                        outputFilename = extractedID + "_merged.txt";
+                    }
+                }
+
+                log(`Processing: ${file.name}...`);
+
+                try {
+                    if (currentInputMode === 'excel') {
+                        // --- EXCEL MERGE LOGIC ---
+                        const jsonData = await processExcelFile(file);
+                        if (!jsonData) { log(`  Skipping: Empty data.`, 'error'); continue; }
+
+                        const currentHeaders = jsonData[0];
+                        const rows = jsonData.slice(1);
+
+                        // Capture header from first file
+                        if (isFirstFile) {
+                            headers = currentHeaders;
+                            combinedData.push(headers.join('\t')); 
+                        }
+
+                        // Append rows
+                        rows.forEach(row => {
+                            const tsvRow = row.map(cell => {
+                                if (cell === null || cell === undefined) return '';
+                                return String(cell).replace(/\t/g, ' ');
+                            }).join('\t');
+                            if(tsvRow.trim() !== "") combinedData.push(tsvRow);
+                        });
+
+                    } else {
+                        // --- TEXT MERGE LOGIC ---
+                        const lines = await processTextFile(file);
+                        if (!lines) { log(`  Skipping: Empty file.`, 'error'); continue; }
+
+                        if (isFirstFile) {
+                            // Keep everything (Header + Body)
+                            headerLine = lines[0]; // Remember header for safety if needed
+                            combinedData.push(...lines);
+                        } else {
+                            // Skip first line (Header), keep Body
+                            if (lines.length > 1) {
+                                combinedData.push(...lines.slice(1));
+                            }
+                        }
+                    }
+
+                } catch (err) {
+                    log(`  Error: ${err.message}`, 'error');
+                }
+            }
+
+            if (combinedData.length === 0) throw new Error("No data extracted.");
+            
+            const finalContent = combinedData.join('\r\n');
+            triggerDownload(finalContent, outputFilename);
+            log(`Done! Merged ${filesToProcess.length} files into ${outputFilename}`, 'success');
+        }
+
+        async function processSeparateMode() {
+            let processedCount = 0;
+
+            for (let i = 0; i < filesToProcess.length; i++) {
+                const file = filesToProcess[i];
+                log(`Processing: ${file.name}...`);
+                
+                try {
+                    const extractedID = getProjectID(file.name);
+                    const outputFilename = extractedID + ".txt";
+                    let finalContent = "";
+
+                    if (currentInputMode === 'excel') {
+                        const jsonData = await processExcelFile(file);
+                        if (!jsonData) continue;
+
+                        const rows = jsonData.map(row => {
+                             return row.map(cell => {
+                                if (cell === null || cell === undefined) return '';
+                                return String(cell).replace(/\t/g, ' ');
+                            }).join('\t');
+                        });
+                        finalContent = rows.join('\r\n');
+
+                    } else {
+                        // For Text separate mode, basically just reading and resaving 
+                        // (useful if they want to standardize filenames or line endings)
+                        const lines = await processTextFile(file);
+                        if (!lines) continue;
+                        finalContent = lines.join('\r\n');
+                    }
+
+                    // Add slight delay
+                    await new Promise(r => setTimeout(r, 200));
+                    triggerDownload(finalContent, outputFilename);
+                    processedCount++;
+
+                } catch (err) {
+                    log(`  Error: ${err.message}`, 'error');
+                }
+            }
+            log(`Done! Processed ${processedCount} files separately.`, 'success');
+        }
+})();
+</script>
+</body>
+</html>
