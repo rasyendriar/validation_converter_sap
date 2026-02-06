@@ -150,7 +150,7 @@
                 </div>
                 <div class="flex flex-col">
                     <div class="font-bold text-2xl tracking-tight text-slate-900 dark:text-white leading-none">Mitratel</div>
-                    <div class="text-xs font-semibold uppercase tracking-wider text-mitratel-red mt-1">SPARTAN 4 LEGOK TEAM</div>
+                    <div class="text-xs font-semibold uppercase tracking-wider text-mitratel-red mt-1">Non-Tower Asset Management Unit</div>
                 </div>
                 
                 <!-- Gamification Divider -->
@@ -204,8 +204,8 @@
             <div>
                 <h1 class="text-xl font-bold text-slate-900 dark:text-white">SAP Migration Suite</h1>
                 <p class="text-sm text-slate-500 dark:text-gray-400 mt-1 flex items-center gap-2">
-                    <span class="bg-gray-100 dark:bg-gray-800 text-xs px-2 py-0.5 rounded text-gray-600 dark:text-gray-300 font-mono">v4.11</span>
-                    Clean Export & Validation
+                    <span class="bg-gray-100 dark:bg-gray-800 text-xs px-2 py-0.5 rounded text-gray-600 dark:text-gray-300 font-mono">v4.12</span>
+                    Clean Export & Validation (Auto-Master)
                 </p>
             </div>
             <div class="flex flex-wrap items-center gap-3">
@@ -683,6 +683,317 @@
             document.documentElement.classList.remove('dark');
         }
 
+        // --- MASTER DATA WORK CENTER ---
+        // Format: STORT,ARBPL
+        // Generated from user provided work_center.csv
+        const MASTER_WC_CSV = `STORT,ARBPL
+AMB0,D12
+BAU0,D11
+BDG0,D05
+BDL0,D03
+BGL0,D03
+BGR0,D04
+BIM0,D08
+BIT0,D11
+BJB0,D09
+BJM0,D09
+BJR0,D05
+BKS0,D04
+BKT0,D02
+BLT0,D07
+BNA0,D01
+BNJ0,D01
+BON0,D09
+BPP0,D09
+BTM0,D02
+BTU0,D07
+CBN0,D05
+CKG0,D04
+CLG0,D04
+CMH0,D05
+CPT0,D04
+DPK0,D04
+DPR0,D08
+DUM0,D02
+GGP0,D04
+GST0,D01
+GTO0,D11
+JAP0,D12
+JMB0,D03
+KDI0,D11
+KDR0,D07
+KPG0,D08
+KTG0,D11
+KYB0,D04
+LGS0,D01
+LLG0,D03
+LSM0,D01
+MAD0,D07
+MDN0,D01
+MDO0,D11
+MET0,D03
+MJK0,D07
+MKS0,D10
+MLG0,D07
+MND0,D11
+MNK0,D12
+MTR0,D08
+PBL0,D07
+PBR0,D03
+PDG0,D02
+PGK0,D03
+PKB0,D03
+PKL0,D06
+PKR0,D03
+PLB0,D03
+PLG0,D09
+PLP0,D10
+PLU0,D11
+PNK0,D09
+PPD0,D02
+PRP0,D10
+PSO0,D11
+PTI0,D06
+PWK0,D05
+PWT0,D06
+PYB0,D02
+RAH0,D11
+RAN0,D02
+RAP0,D01
+RAS0,D12
+RBG0,D06
+RGT0,D02
+RKB0,D02
+RMB0,D11
+RNK0,D12
+RPT0,D02
+RTA0,D09
+RTG0,D08
+RTN0,D11
+RTP0,D11
+SAG0,D09
+SAK0,D03
+SAL0,D06
+SBB0,D08
+SBG0,D02
+SBH0,D01
+SBM0,D05
+SBR0,D02
+SBS0,D09
+SBW0,D08
+SDA0,D07
+SDK0,D01
+SDN0,D03
+SDR0,D11
+SDW0,D09
+SED0,D09
+SEL0,D08
+SGB0,D11
+SGI0,D01
+SGL0,D03
+SGM0,D11
+SGN0,D06
+SGP0,D12
+SGR0,D08
+SGT0,D09
+SIT0,D07
+SKD0,D09
+SKG0,D11
+SKH0,D06
+SKM0,D05
+SKW0,D09
+SLO0,D06
+SLT0,D06
+SMG0,D06
+SMN0,D05
+SMR0,D09
+SMT0,D09
+SNN0,D11
+SNT0,D09
+SOR0,D12
+SPG0,D07
+SRG0,D04
+SRP0,D04
+SSG0,D11
+STB0,D01
+STG0,D09
+STI0,D01
+STN0,D09
+SUB0,D07
+SWL0,D02
+TGR0,D04
+TIM0,D12
+TJA0,D09
+TJG0,D03
+TJS0,D09
+TKG0,D04
+TLG0,D07
+TMH0,D11
+TNM0,D12
+TRK0,D09
+TSK0,D05
+TUB0,D07
+TUL0,D07
+WAT0,D06
+WBL0,D08
+WED0,D11
+WGD0,D11
+WGP0,D08
+WGW0,D11
+AMB1,D12
+BAU1,D11
+BDG1,D05
+BDL1,D03
+BGL1,D03
+BGR1,D04
+BIM1,D08
+BIT1,D11
+BJB1,D09
+BJM1,D09
+BJR1,D05
+BKS1,D04
+BKT1,D02
+BLT1,D07
+BNA1,D01
+BNJ1,D01
+BON1,D09
+BPP1,D09
+BTM1,D02
+BTU1,D07
+CBN1,D05
+CKG1,D04
+CLG1,D04
+CMH1,D05
+CPT1,D04
+DPK1,D04
+DPR1,D08
+DUM1,D02
+GGP1,D04
+GST1,D01
+GTO1,D11
+JAP1,D12
+JMB1,D03
+KDI1,D11
+KDR1,D07
+KPG1,D08
+KTG1,D11
+KYB1,D04
+LGS1,D01
+LLG1,D03
+LSM1,D01
+MAD1,D07
+MDN1,D01
+MDO1,D11
+MET1,D03
+MJK1,D07
+MKS1,D10
+MLG1,D07
+MND1,D11
+MNK1,D12
+MTR1,D08
+PBL1,D07
+PBR1,D03
+PDG1,D02
+PGK1,D03
+PKB1,D03
+PKL1,D06
+PKR1,D03
+PLB1,D03
+PLG1,D09
+PLP1,D10
+PLU1,D11
+PNK1,D09
+PPD1,D02
+PRP1,D10
+PSO1,D11
+PTI1,D06
+PWK1,D05
+PWT1,D06
+PYB1,D02
+RAH1,D11
+RAN1,D02
+RAP1,D01
+RAS1,D12
+RBG1,D06
+RGT1,D02
+RKB1,D02
+RMB1,D11
+RNK1,D12
+RPT1,D02
+RTA1,D09
+RTG1,D08
+RTN1,D11
+RTP1,D11
+SAG1,D09
+SAK1,D03
+SAL1,D06
+SBB1,D08
+SBG1,D02
+SBH1,D01
+SBM1,D05
+SBR1,D02
+SBS1,D09
+SBW1,D08
+SDA1,D07
+SDK1,D01
+SDN1,D03
+SDR1,D11
+SDW1,D09
+SED1,D09
+SEL1,D08
+SGB1,D11
+SGI1,D01
+SGL1,D03
+SGM1,D11
+SGN1,D06
+SGP1,D12
+SGR1,D08
+SGT1,D09
+SIT1,D07
+SKD1,D09
+SKG1,D11
+SKH1,D06
+SKM1,D05
+SKW1,D09
+SLO1,D06
+SLT1,D06
+SMG1,D06
+SMN1,D05
+SMR1,D09
+SMT1,D09
+SNN1,D11
+SNT1,D09
+SOR1,D12
+SPG1,D07
+SRG1,D04
+SRP1,D04
+SSG1,D11
+STB1,D01
+STG1,D09
+STI1,D01
+STN1,D09
+SUB1,D07
+SWL1,D02
+TGR1,D04
+TIM1,D12
+TJA1,D09
+TJG1,D03
+TJS1,D09
+TKG1,D04
+TLG1,D07
+TMH1,D11
+TNM1,D12
+TRK1,D09
+TSK1,D05
+TUB1,D07
+TUL1,D07
+WAT1,D06
+WBL1,D08
+WED1,D11
+WGD1,D11
+WGP1,D08
+WGW1,D11`;
+
         // --- GLOBAL STATE ---
         const appState = {
             queue: [],
@@ -694,7 +1005,8 @@
             rowsPerPage: 100,
             targetPID: "",
             currentFileIndex: -1, 
-            stats: { total: 0, pass: 0, fail: 0 }
+            stats: { total: 0, pass: 0, fail: 0 },
+            workCenterData: new Map() // Initialized in DOMContentLoaded
         };
 
         // --- GAMIFICATION SYSTEM ---
@@ -788,6 +1100,19 @@
         document.addEventListener("DOMContentLoaded", () => {
             GameSystem.init();
             
+            // --- Parse Master Data ---
+            const lines = MASTER_WC_CSV.split('\n');
+            let loadedCount = 0;
+            lines.forEach((line, index) => {
+                if(index === 0) return; // Skip header
+                const [stort, arbpl] = line.split(',').map(s => s.trim());
+                if(stort && arbpl) {
+                    appState.workCenterData.set(stort, arbpl);
+                    loadedCount++;
+                }
+            });
+            console.log(`Loaded ${loadedCount} Work Center rules.`);
+
             // Drag Scroll Logic
             const scrollContainer = document.getElementById('viz-scroll-container');
             let isDown = false;
@@ -869,7 +1194,7 @@
             }
         }
 
-        // --- QUEUE SEARCH & FILTER LOGIC (NEW) ---
+        // --- QUEUE SEARCH & FILTER LOGIC ---
         let currentQueueFilter = 'all';
 
         function setQueueFilter(status) {
@@ -916,7 +1241,7 @@
 
                     if (matchesSearch && matchesFilter) {
                         tr[i].style.display = "";
-                        tr[i].classList.add("animate-fade-in"); // Add subtle animation
+                        tr[i].classList.add("animate-fade-in");
                     } else {
                         tr[i].style.display = "none";
                         tr[i].classList.remove("animate-fade-in");
@@ -1120,12 +1445,13 @@ Lanjutkan?`)) {
 
         function handleDrop(e) { handleFiles(e.dataTransfer.files); }
 
-        function handleFiles(files) {
+        async function handleFiles(files) {
             const tbody = document.getElementById('result-body');
             let added = false;
             
             for (let i = 0; i < files.length; i++) {
                 const file = files[i];
+                
                 const fileId = `file-${Date.now()}-${i}`;
                 appState.queue.push({ file, id: fileId });
                 added = true;
@@ -1166,9 +1492,11 @@ Lanjutkan?`)) {
                 document.getElementById('btnClearFiles').classList.remove('hidden');
                 document.getElementById('summary-dashboard').classList.remove('hidden');
                 
-                // Re-apply filter if user adds files while filter is active
+                // Re-apply filter if active (to hide/show this new row)
                 if(window.currentQueueFilter && window.currentQueueFilter !== 'all') {
-                    setTimeout(filterQueueTable, 100);
+                    filterQueueTable();
+                } else if(document.getElementById('queueSearch').value.trim() !== "") {
+                    filterQueueTable();
                 }
             }
         }
@@ -1375,6 +1703,25 @@ Lanjutkan?`)) {
                                 if (abckz !== suffixMap[code]) {
                                     errors.push({ Rule: "R7_ABCKZ", Row: excelRow(i), Message: `Len 26 (Code ${code}) harus ABCKZ='${suffixMap[code]}', tapi tertulis '${abckz}'` });
                                 }
+                            }
+                        }
+                    }
+
+                    // --- NEW RULE: R12_WORK_CENTER_MATCH (AUTO MASTER) ---
+                    // Using hardcoded MASTER_WC_CSV parsed into appState.workCenterData
+                    if (appState.workCenterData && appState.workCenterData.size > 0) {
+                        const stort = String(r.STORT || "").trim();
+                        const arbpl = String(r.ARBPL || "").trim();
+                        
+                        // Check if STORT exists in our master map
+                        if (stort && appState.workCenterData.has(stort)) {
+                            const expectedArbpl = appState.workCenterData.get(stort);
+                            if (arbpl !== expectedArbpl) {
+                                errors.push({ 
+                                    Rule: "R12_WORK_CENTER", 
+                                    Row: excelRow(i), 
+                                    Message: `STORT '${stort}' requires ARBPL '${expectedArbpl}', but found '${arbpl}'` 
+                                });
                             }
                         }
                     }
