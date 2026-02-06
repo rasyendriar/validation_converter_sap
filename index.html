@@ -180,6 +180,10 @@
                 <button id="tabBtnValidator" class="px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 bg-gray-50 text-slate-900 shadow-sm dark:bg-gray-700 dark:text-white">
                     <i class="fa-solid fa-file-shield mr-2 text-mitratel-red"></i>Validator
                 </button>
+                <!-- NEW TAB: BATCHER -->
+                <button id="tabBtnBatcher" class="px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 text-slate-500 hover:text-slate-900 dark:text-gray-400 dark:hover:text-white">
+                    <i class="fa-solid fa-folder-tree mr-2"></i>Batcher
+                </button>
                 <button id="tabBtnConverter" class="px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 text-slate-500 hover:text-slate-900 dark:text-gray-400 dark:hover:text-white">
                     <i class="fa-solid fa-arrow-right-arrow-left mr-2"></i>Converter
                 </button>
@@ -204,8 +208,8 @@
             <div>
                 <h1 class="text-xl font-bold text-slate-900 dark:text-white">SAP Migration Suite</h1>
                 <p class="text-sm text-slate-500 dark:text-gray-400 mt-1 flex items-center gap-2">
-                    <span class="bg-gray-100 dark:bg-gray-800 text-xs px-2 py-0.5 rounded text-gray-600 dark:text-gray-300 font-mono">v4.13</span>
-                    Clean Export & Validation (Auto-Fix SPAN)
+                    <span class="bg-gray-100 dark:bg-gray-800 text-xs px-2 py-0.5 rounded text-gray-600 dark:text-gray-300 font-mono">v4.14</span>
+                    Batch Folder Manager Included
                 </p>
             </div>
             <div class="flex flex-wrap items-center gap-3">
@@ -380,6 +384,105 @@
     </div>
 </div>
 
+<!-- TAB: BATCHER (NEW FEATURE) -->
+<div id="tab-batcher" class="hidden fade-in">
+    <div class="max-w-7xl mx-auto">
+        <div class="bg-white dark:bg-gray-900 w-full rounded-2xl shadow-xl shadow-gray-200/50 dark:shadow-none overflow-hidden border border-gray-100 dark:border-gray-800 p-8">
+            <div class="border-b border-gray-100 dark:border-gray-800 pb-6 mb-8 flex justify-between items-center">
+                <div>
+                    <h2 class="text-xl font-bold text-slate-900 dark:text-white">Smart Batch Manager</h2>
+                    <p class="text-sm text-slate-500 dark:text-gray-400 mt-1">Match Master List against a large folder and create validation batches.</p>
+                </div>
+                <div class="h-12 w-12 bg-blue-50 dark:bg-blue-900/20 rounded-xl flex items-center justify-center shadow-sm">
+                    <i class="fa-solid fa-folder-tree text-blue-600 dark:text-blue-400 text-xl"></i>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- Left Column: Inputs -->
+                <div class="space-y-6 lg:col-span-1">
+                    <!-- Step 1: Master List -->
+                    <div class="bg-gray-50 dark:bg-gray-800/50 p-5 rounded-xl border border-gray-200 dark:border-gray-700">
+                        <div class="flex items-center gap-3 mb-3">
+                            <span class="w-6 h-6 rounded-full bg-blue-600 text-white text-xs font-bold flex items-center justify-center">1</span>
+                            <h3 class="font-bold text-slate-800 dark:text-white text-sm">Upload Master List</h3>
+                        </div>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mb-3">Upload Excel/CSV containing target PIDs/Filenames in the first column.</p>
+                        <input type="file" id="batchMasterInput" accept=".xlsx, .xls, .csv" class="w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 dark:file:bg-blue-900/30 dark:file:text-blue-300 transition"/>
+                        <div id="masterListStat" class="mt-2 text-xs font-mono text-emerald-600 dark:text-emerald-400 hidden">
+                            <i class="fa-solid fa-check mr-1"></i> Loaded <span id="masterCount">0</span> targets
+                        </div>
+                    </div>
+
+                    <!-- Step 2: Source Folder -->
+                    <div class="bg-gray-50 dark:bg-gray-800/50 p-5 rounded-xl border border-gray-200 dark:border-gray-700">
+                        <div class="flex items-center gap-3 mb-3">
+                            <span class="w-6 h-6 rounded-full bg-blue-600 text-white text-xs font-bold flex items-center justify-center">2</span>
+                            <h3 class="font-bold text-slate-800 dark:text-white text-sm">Select Source Folder</h3>
+                        </div>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mb-3">Select the folder containing all Excel files.</p>
+                        <input type="file" id="batchFolderInput" webkitdirectory directory multiple class="w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 dark:file:bg-blue-900/30 dark:file:text-blue-300 transition"/>
+                        <div id="folderStat" class="mt-2 text-xs font-mono text-emerald-600 dark:text-emerald-400 hidden">
+                            <i class="fa-solid fa-check mr-1"></i> Indexed <span id="folderCount">0</span> files
+                        </div>
+                    </div>
+
+                    <!-- Step 3: Configure -->
+                    <div class="bg-gray-50 dark:bg-gray-800/50 p-5 rounded-xl border border-gray-200 dark:border-gray-700">
+                        <div class="flex items-center gap-3 mb-3">
+                            <span class="w-6 h-6 rounded-full bg-blue-600 text-white text-xs font-bold flex items-center justify-center">3</span>
+                            <h3 class="font-bold text-slate-800 dark:text-white text-sm">Batch Configuration</h3>
+                        </div>
+                        <div class="flex items-center gap-4">
+                            <div class="flex-1">
+                                <label class="block text-xs font-bold text-gray-400 mb-1">Batch Size</label>
+                                <input type="number" id="batchSizeInput" value="50" min="1" class="w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none dark:text-white">
+                            </div>
+                            <button onclick="runBatchMatching()" class="flex-1 bg-slate-800 hover:bg-slate-900 text-white font-bold py-2 px-4 rounded-lg text-xs h-[38px] mt-auto transition shadow-lg transform active:scale-95">
+                                Run Matcher
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Column: Results -->
+                <div class="lg:col-span-2 space-y-6">
+                    <!-- Stats Card -->
+                    <div class="grid grid-cols-3 gap-4">
+                        <div class="bg-blue-50 dark:bg-blue-900/10 p-4 rounded-xl border border-blue-100 dark:border-blue-900/30 text-center">
+                            <h4 class="text-xs font-bold text-blue-500 uppercase">Matches Found</h4>
+                            <p class="text-2xl font-bold text-blue-700 dark:text-blue-300" id="matchCount">0</p>
+                        </div>
+                        <div class="bg-orange-50 dark:bg-orange-900/10 p-4 rounded-xl border border-orange-100 dark:border-orange-900/30 text-center">
+                            <h4 class="text-xs font-bold text-orange-500 uppercase">Missing Files</h4>
+                            <p class="text-2xl font-bold text-orange-700 dark:text-orange-300" id="missingCount">0</p>
+                        </div>
+                        <div class="bg-purple-50 dark:bg-purple-900/10 p-4 rounded-xl border border-purple-100 dark:border-purple-900/30 text-center">
+                            <h4 class="text-xs font-bold text-purple-500 uppercase">Batches Created</h4>
+                            <p class="text-2xl font-bold text-purple-700 dark:text-purple-300" id="batchCountDisplay">0</p>
+                        </div>
+                    </div>
+
+                    <!-- Batches List -->
+                    <div class="bg-gray-50 dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col h-[400px]">
+                        <div class="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center bg-white dark:bg-gray-800">
+                            <h3 class="font-bold text-sm text-slate-700 dark:text-gray-200">Generated Batches</h3>
+                            <button onclick="sendBatchToValidator('all')" id="btnSendAllBatch" class="hidden bg-mitratel-red hover:bg-red-700 text-white text-xs font-bold px-3 py-1.5 rounded transition shadow-sm">
+                                <i class="fa-solid fa-paper-plane mr-1"></i> Send ALL to Validator
+                            </button>
+                        </div>
+                        <div id="batchListContainer" class="flex-1 overflow-y-auto p-4 space-y-3">
+                            <div class="text-center text-gray-400 py-10 italic">
+                                Run matching to generate batches...
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- TAB: CONVERTER -->
 <div id="tab-converter" class="hidden fade-in">
     <div class="max-w-4xl mx-auto">
@@ -478,25 +581,21 @@
         <button onclick="toggleGuide()" class="absolute top-6 right-6 text-gray-400 hover:text-slate-900 dark:hover:text-white transition">
             <i class="fa-solid fa-xmark text-xl"></i>
         </button>
-        <h2 class="text-2xl font-bold text-slate-900 dark:text-white mb-6">User Guide <span class="text-mitratel-red">v4.13</span></h2>
+        <h2 class="text-2xl font-bold text-slate-900 dark:text-white mb-6">User Guide <span class="text-mitratel-red">v4.14</span></h2>
         <div class="space-y-4 text-sm text-slate-600 dark:text-gray-300 overflow-y-auto max-h-[60vh] pr-2">
             <div class="p-4 bg-gray-50 dark:bg-gray-800 rounded-xl">
-                <h3 class="font-bold text-slate-900 dark:text-white mb-2"><i class="fa-solid fa-wand-magic-sparkles text-mitratel-red mr-2"></i>New Feature: Clean Export</h3>
-                <p>The system now automatically removes helper columns (like <code>STRNO_LENGTH</code>) from your exports, ensuring the file is ready for SAP upload immediately.</p>
-                <p class="mt-2 text-xs text-emerald-600 font-bold">UPDATED: If STRNO length is 17 (SPAN), PLTXT is automatically rewritten to match STRNO.</p>
+                <h3 class="font-bold text-slate-900 dark:text-white mb-2"><i class="fa-solid fa-folder-tree text-blue-500 mr-2"></i>New: Batch Manager</h3>
+                <p>Use the new "Batcher" tab to process massive amounts of files.</p>
+                <ul class="list-disc pl-5 mt-2 space-y-1 text-xs">
+                    <li>Upload a Master List (Excel) of PIDs you need.</li>
+                    <li>Select a Folder containing thousands of files.</li>
+                    <li>System matches them and creates manageable batches (e.g. 50 files each).</li>
+                    <li>Send batches directly to Validator without browser crashes.</li>
+                </ul>
             </div>
-            
-            <h3 class="font-bold mt-4">Visualizer Navigation</h3>
-            <ul class="list-disc pl-5 space-y-2">
-                <li><strong>Tab 1 (Visual):</strong> Shows the topological view of the ring. Scroll to pan, Ctrl+Scroll to zoom. <strong>Now supports OTB Insert Sites!</strong></li>
-                <li><strong>Tab 2 (Display Data):</strong> Shows <code>display_ring</code> sheet data (technical columns hidden).</li>
-                <li><strong>Tab 3 (Tenant Data):</strong> Searchable table of the <code>below_ring</code> sheet.</li>
-                <li><strong>Tab 4 (Validation Log):</strong> Shows validation errors specific to the current file.</li>
-            </ul>
-
-            <div class="p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-xl border border-yellow-100 dark:border-yellow-900 mt-4">
-                 <h3 class="font-bold text-yellow-800 dark:text-yellow-200 mb-2"><i class="fa-solid fa-star mr-2"></i>Gamification & Verification</h3>
-                 <p class="text-yellow-700 dark:text-yellow-300">You now earn XP for every valid file. Manually verifying a file (using the "Verify Structure" button in the view modal) awards extra XP!</p>
+             <div class="p-4 bg-gray-50 dark:bg-gray-800 rounded-xl mt-4">
+                <h3 class="font-bold text-slate-900 dark:text-white mb-2"><i class="fa-solid fa-wand-magic-sparkles text-mitratel-red mr-2"></i>Auto-Fix SPAN</h3>
+                <p class="mt-2 text-xs text-emerald-600 font-bold">UPDATED: If STRNO length is 17 (SPAN), PLTXT is automatically rewritten to match STRNO.</p>
             </div>
         </div>
     </div>
@@ -504,6 +603,7 @@
 
 <!-- 2. Viz Modal (Full Screen) -->
 <div id="vizModal" class="fixed inset-0 bg-gray-900/80 backdrop-blur-sm hidden z-50 flex flex-col transition-opacity duration-300">
+    <!-- Content same as before, simplified for brevity in this view but fully preserved in output -->
     <div class="m-auto bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-[98%] h-[95vh] flex flex-col overflow-hidden border border-gray-200 dark:border-gray-800">
         <!-- Header -->
         <div class="flex justify-between items-center px-6 py-4 border-b border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900">
@@ -685,8 +785,6 @@
         }
 
         // --- MASTER DATA WORK CENTER ---
-        // Format: STORT,ARBPL
-        // Generated from user provided work_center.csv
         const MASTER_WC_CSV = `STORT,ARBPL
 AMB0,D12
 BAU0,D11
@@ -1206,8 +1304,8 @@ WTP1,D11`;
         // --- GLOBAL STATE ---
         const appState = {
             queue: [],
-            processed: {}, // Key: fileName, Value: processedData
-            processedKeys: [], // Array of fileNames for navigation order
+            processed: {}, 
+            processedKeys: [], 
             currentData: [],
             filteredData: [],
             currentPage: 1,
@@ -1215,8 +1313,17 @@ WTP1,D11`;
             targetPID: "",
             currentFileIndex: -1, 
             stats: { total: 0, pass: 0, fail: 0 },
-            workCenterData: new Map() // Initialized in DOMContentLoaded
+            workCenterData: new Map() 
         };
+
+        const batcherState = {
+            targetFiles: new Set(),
+            folderMap: new Map(),
+            batches: [],
+            matchCount: 0,
+            missingCount: 0
+        };
+
 
         // --- GAMIFICATION SYSTEM ---
         const GameSystem = {
@@ -2704,35 +2811,204 @@ Lanjutkan?`)) {
         // --- Main tab switching (Validator vs Converter) ---
         (function setupMainTabs() {
             const btnV = document.getElementById('tabBtnValidator');
+            const btnB = document.getElementById('tabBtnBatcher');
             const btnC = document.getElementById('tabBtnConverter');
             const tabV = document.getElementById('tab-validator');
+            const tabB = document.getElementById('tab-batcher');
             const tabC = document.getElementById('tab-converter');
 
-            if (!btnV || !btnC || !tabV || !tabC) return;
+            if (!btnV || !btnB || !btnC || !tabV || !tabB || !tabC) return;
 
             function setActive(which) {
                 const isV = which === 'validator';
+                const isB = which === 'batcher';
+                const isC = which === 'converter';
+                
                 tabV.classList.toggle('hidden', !isV);
-                tabC.classList.toggle('hidden', isV);
+                tabB.classList.toggle('hidden', !isB);
+                tabC.classList.toggle('hidden', !isC);
 
-                // Mitratel tab toggle style
-                if (isV) {
-                    btnV.classList.add('bg-gray-50', 'text-slate-900', 'shadow-sm', 'dark:bg-gray-700', 'dark:text-white');
-                    btnV.classList.remove('text-slate-500', 'hover:text-slate-900', 'dark:text-gray-400', 'dark:hover:text-white');
-                    
-                    btnC.classList.add('text-slate-500', 'hover:text-slate-900', 'dark:text-gray-400', 'dark:hover:text-white');
-                    btnC.classList.remove('bg-gray-50', 'text-slate-900', 'shadow-sm', 'dark:bg-gray-700', 'dark:text-white');
-                } else {
-                    btnC.classList.add('bg-gray-50', 'text-slate-900', 'shadow-sm', 'dark:bg-gray-700', 'dark:text-white');
-                    btnC.classList.remove('text-slate-500', 'hover:text-slate-900', 'dark:text-gray-400', 'dark:hover:text-white');
-                    
-                    btnV.classList.add('text-slate-500', 'hover:text-slate-900', 'dark:text-gray-400', 'dark:hover:text-white');
-                    btnV.classList.remove('bg-gray-50', 'text-slate-900', 'shadow-sm', 'dark:bg-gray-700', 'dark:text-white');
-                }
+                // Helper to set style
+                const setStyle = (btn, active) => {
+                    if(active) {
+                        btn.classList.add('bg-gray-50', 'text-slate-900', 'shadow-sm', 'dark:bg-gray-700', 'dark:text-white');
+                        btn.classList.remove('text-slate-500', 'hover:text-slate-900', 'dark:text-gray-400', 'dark:hover:text-white');
+                    } else {
+                        btn.classList.add('text-slate-500', 'hover:text-slate-900', 'dark:text-gray-400', 'dark:hover:text-white');
+                        btn.classList.remove('bg-gray-50', 'text-slate-900', 'shadow-sm', 'dark:bg-gray-700', 'dark:text-white');
+                    }
+                };
+
+                setStyle(btnV, isV);
+                setStyle(btnB, isB);
+                setStyle(btnC, isC);
             }
 
             btnV.addEventListener('click', () => setActive('validator'));
+            btnB.addEventListener('click', () => setActive('batcher'));
             btnC.addEventListener('click', () => setActive('converter'));
+        })();
+
+        // --- BATCHER LOGIC (NEW FEATURE) ---
+        (function setupBatcher() {
+            const masterInput = document.getElementById('batchMasterInput');
+            const folderInput = document.getElementById('batchFolderInput');
+
+            masterInput.addEventListener('change', async (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+
+                batcherState.targetFiles.clear();
+                let targets = [];
+
+                if (file.name.endsWith('.csv') || file.name.endsWith('.txt')) {
+                    const text = await file.text();
+                    // Assuming comma, semi-colon or newline separated
+                    const lines = text.split(/[\r\n]+/);
+                    lines.forEach(line => {
+                         // Simple heuristic: take first non-empty token
+                         const token = line.split(/[;,]/)[0].trim();
+                         if(token) targets.push(token);
+                    });
+                } else {
+                    const ab = await file.arrayBuffer();
+                    const wb = XLSX.read(ab, {type: 'array'});
+                    const ws = wb.Sheets[wb.SheetNames[0]];
+                    // Assuming column A is the target filename
+                    const data = XLSX.utils.sheet_to_json(ws, {header: 1});
+                    data.forEach(row => {
+                        if(row[0]) targets.push(String(row[0]).trim());
+                    });
+                }
+                
+                targets.forEach(t => batcherState.targetFiles.add(normalizeName(t)));
+                
+                document.getElementById('masterCount').innerText = batcherState.targetFiles.size;
+                document.getElementById('masterListStat').classList.remove('hidden');
+                console.log("Master targets loaded:", batcherState.targetFiles);
+            });
+
+            folderInput.addEventListener('change', (e) => {
+                batcherState.folderMap.clear();
+                const files = Array.from(e.target.files);
+                
+                // Indexing logic
+                files.forEach(f => {
+                    if(f.name.match(/\.(xls|xlsx)$/i) && !f.name.startsWith("~$")) {
+                        const key = normalizeName(f.name);
+                        batcherState.folderMap.set(key, f);
+                    }
+                });
+
+                document.getElementById('folderCount').innerText = batcherState.folderMap.size;
+                document.getElementById('folderStat').classList.remove('hidden');
+            });
+
+            function normalizeName(name) {
+                // Remove extension and common clutter
+                return name.replace(/\.(xlsx|xls|csv)$/i, '').trim().toUpperCase();
+            }
+
+            // Expose function globally for HTML onclick
+            window.runBatchMatching = function() {
+                if (batcherState.targetFiles.size === 0) {
+                    alert("Please upload a Master List first.");
+                    return;
+                }
+                if (batcherState.folderMap.size === 0) {
+                    alert("Please select a Source Folder first.");
+                    return;
+                }
+
+                const batchSize = parseInt(document.getElementById('batchSizeInput').value) || 50;
+                const foundFiles = [];
+                let missing = 0;
+
+                // Checking Match
+                batcherState.targetFiles.forEach(target => {
+                    if (batcherState.folderMap.has(target)) {
+                        foundFiles.push(batcherState.folderMap.get(target));
+                    } else {
+                        missing++;
+                    }
+                });
+
+                // Update Stats
+                document.getElementById('matchCount').innerText = foundFiles.length;
+                document.getElementById('missingCount').innerText = missing;
+                batcherState.matchCount = foundFiles.length;
+
+                // Create Batches
+                batcherState.batches = [];
+                for (let i = 0; i < foundFiles.length; i += batchSize) {
+                    batcherState.batches.push(foundFiles.slice(i, i + batchSize));
+                }
+
+                document.getElementById('batchCountDisplay').innerText = batcherState.batches.length;
+                renderBatchList();
+                
+                if(foundFiles.length > 0) {
+                     document.getElementById('btnSendAllBatch').classList.remove('hidden');
+                } else {
+                     document.getElementById('btnSendAllBatch').classList.add('hidden');
+                }
+            };
+
+            function renderBatchList() {
+                const container = document.getElementById('batchListContainer');
+                container.innerHTML = '';
+
+                if (batcherState.batches.length === 0) {
+                    container.innerHTML = '<div class="text-center text-gray-400 py-10 italic">No matches found based on current inputs.</div>';
+                    return;
+                }
+
+                batcherState.batches.forEach((batch, index) => {
+                    const div = document.createElement('div');
+                    div.className = "bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg p-3 flex justify-between items-center shadow-sm hover:shadow-md transition";
+                    div.innerHTML = `
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-300 flex items-center justify-center font-bold text-xs">
+                                ${index + 1}
+                            </div>
+                            <div>
+                                <h4 class="text-sm font-bold text-slate-700 dark:text-gray-200">Batch #${index + 1}</h4>
+                                <p class="text-xs text-gray-400">${batch.length} files</p>
+                            </div>
+                        </div>
+                        <button onclick="sendBatchToValidator(${index})" class="bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/40 text-blue-600 dark:text-blue-300 text-xs font-semibold px-3 py-1.5 rounded border border-blue-100 dark:border-blue-900/30 transition">
+                            Process <i class="fa-solid fa-arrow-right ml-1"></i>
+                        </button>
+                    `;
+                    container.appendChild(div);
+                });
+            }
+
+            window.sendBatchToValidator = function(batchIndex) {
+                let filesToSend = [];
+                if (batchIndex === 'all') {
+                    if(!confirm("Are you sure you want to process ALL " + batcherState.matchCount + " files? This might take a while.")) return;
+                    // Flatten all batches
+                    batcherState.batches.forEach(b => filesToSend.push(...b));
+                } else {
+                    filesToSend = batcherState.batches[batchIndex];
+                }
+
+                if (!filesToSend || filesToSend.length === 0) return;
+
+                // 1. Switch Tab
+                document.getElementById('tabBtnValidator').click();
+                
+                // 2. Clear Queue (Optional, user preference, but safer for batching)
+                // appState.queue = []; // Keep append behavior for flexibility? 
+                // Let's Append, user can clear manually if needed.
+                
+                // 3. Trigger Handle Files Logic
+                handleFiles(filesToSend);
+                
+                showToast(`Transferred ${filesToSend.length} files to Validator Queue`, 'success');
+            };
+
         })();
 
     </script>
