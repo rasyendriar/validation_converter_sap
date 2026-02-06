@@ -208,7 +208,7 @@
             <div>
                 <h1 class="text-xl font-bold text-slate-900 dark:text-white">SAP Migration Suite</h1>
                 <p class="text-sm text-slate-500 dark:text-gray-400 mt-1 flex items-center gap-2">
-                    <span class="bg-gray-100 dark:bg-gray-800 text-xs px-2 py-0.5 rounded text-gray-600 dark:text-gray-300 font-mono">v4.14</span>
+                    <span class="bg-gray-100 dark:bg-gray-800 text-xs px-2 py-0.5 rounded text-gray-600 dark:text-gray-300 font-mono">v4.15</span>
                     Batch Folder Manager Included
                 </p>
             </div>
@@ -449,24 +449,40 @@
                 <div class="lg:col-span-2 space-y-6">
                     <!-- Stats Card -->
                     <div class="grid grid-cols-3 gap-4">
-                        <div class="bg-blue-50 dark:bg-blue-900/10 p-4 rounded-xl border border-blue-100 dark:border-blue-900/30 text-center">
-                            <h4 class="text-xs font-bold text-blue-500 uppercase">Matches Found</h4>
-                            <p class="text-2xl font-bold text-blue-700 dark:text-blue-300" id="matchCount">0</p>
+                        <div class="bg-blue-50 dark:bg-blue-900/10 p-4 rounded-xl border border-blue-100 dark:border-blue-900/30 text-center relative overflow-hidden group">
+                             <div class="absolute -right-4 -top-4 text-blue-100 dark:text-blue-900/20 text-6xl group-hover:scale-110 transition-transform"><i class="fa-solid fa-check-double"></i></div>
+                            <h4 class="text-xs font-bold text-blue-500 uppercase relative z-10">Matches Found</h4>
+                            <p class="text-2xl font-bold text-blue-700 dark:text-blue-300 relative z-10" id="matchCount">0</p>
                         </div>
-                        <div class="bg-orange-50 dark:bg-orange-900/10 p-4 rounded-xl border border-orange-100 dark:border-orange-900/30 text-center">
-                            <h4 class="text-xs font-bold text-orange-500 uppercase">Missing Files</h4>
-                            <p class="text-2xl font-bold text-orange-700 dark:text-orange-300" id="missingCount">0</p>
+                        
+                        <!-- MISSING FILES CARD (IMPROVED) -->
+                        <div class="bg-orange-50 dark:bg-orange-900/10 p-4 rounded-xl border border-orange-100 dark:border-orange-900/30 text-center relative group">
+                            <div class="absolute -right-4 -top-4 text-orange-100 dark:text-orange-900/20 text-6xl group-hover:scale-110 transition-transform"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                            <h4 class="text-xs font-bold text-orange-500 uppercase relative z-10">Missing Files</h4>
+                            <p class="text-2xl font-bold text-orange-700 dark:text-orange-300 relative z-10" id="missingCount">0</p>
+                            <!-- ACTION BUTTON FOR MISSING -->
+                            <button id="btnViewMissing" onclick="viewMissingFiles()" class="hidden absolute bottom-2 right-2 left-2 mx-auto w-[90%] bg-orange-100 hover:bg-orange-200 dark:bg-orange-900/40 dark:hover:bg-orange-900/60 text-orange-700 dark:text-orange-300 text-[10px] font-bold py-1 rounded transition z-20">
+                                View Details
+                            </button>
                         </div>
-                        <div class="bg-purple-50 dark:bg-purple-900/10 p-4 rounded-xl border border-purple-100 dark:border-purple-900/30 text-center">
-                            <h4 class="text-xs font-bold text-purple-500 uppercase">Batches Created</h4>
-                            <p class="text-2xl font-bold text-purple-700 dark:text-purple-300" id="batchCountDisplay">0</p>
+                        
+                        <div class="bg-purple-50 dark:bg-purple-900/10 p-4 rounded-xl border border-purple-100 dark:border-purple-900/30 text-center relative overflow-hidden group">
+                            <div class="absolute -right-4 -top-4 text-purple-100 dark:text-purple-900/20 text-6xl group-hover:scale-110 transition-transform"><i class="fa-solid fa-layer-group"></i></div>
+                            <h4 class="text-xs font-bold text-purple-500 uppercase relative z-10">Batches Created</h4>
+                            <p class="text-2xl font-bold text-purple-700 dark:text-purple-300 relative z-10" id="batchCountDisplay">0</p>
                         </div>
                     </div>
 
                     <!-- Batches List -->
                     <div class="bg-gray-50 dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col h-[400px]">
                         <div class="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center bg-white dark:bg-gray-800">
-                            <h3 class="font-bold text-sm text-slate-700 dark:text-gray-200">Generated Batches</h3>
+                            <div class="flex items-center gap-2">
+                                <h3 class="font-bold text-sm text-slate-700 dark:text-gray-200">Generated Batches</h3>
+                                <!-- DOWNLOAD MANIFEST BTN -->
+                                <button onclick="downloadBatchManifest()" id="btnDownloadManifest" class="hidden text-[10px] bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 px-2 py-1 rounded border border-gray-200 dark:border-gray-600 transition" title="Download Excel Report of Batches & Missing Files">
+                                    <i class="fa-solid fa-file-excel mr-1 text-green-600"></i> Report
+                                </button>
+                            </div>
                             <button onclick="sendBatchToValidator('all')" id="btnSendAllBatch" class="hidden bg-mitratel-red hover:bg-red-700 text-white text-xs font-bold px-3 py-1.5 rounded transition shadow-sm">
                                 <i class="fa-solid fa-paper-plane mr-1"></i> Send ALL to Validator
                             </button>
@@ -581,16 +597,17 @@
         <button onclick="toggleGuide()" class="absolute top-6 right-6 text-gray-400 hover:text-slate-900 dark:hover:text-white transition">
             <i class="fa-solid fa-xmark text-xl"></i>
         </button>
-        <h2 class="text-2xl font-bold text-slate-900 dark:text-white mb-6">User Guide <span class="text-mitratel-red">v4.14</span></h2>
+        <h2 class="text-2xl font-bold text-slate-900 dark:text-white mb-6">User Guide <span class="text-mitratel-red">v4.15</span></h2>
         <div class="space-y-4 text-sm text-slate-600 dark:text-gray-300 overflow-y-auto max-h-[60vh] pr-2">
             <div class="p-4 bg-gray-50 dark:bg-gray-800 rounded-xl">
-                <h3 class="font-bold text-slate-900 dark:text-white mb-2"><i class="fa-solid fa-folder-tree text-blue-500 mr-2"></i>New: Batch Manager</h3>
-                <p>Use the new "Batcher" tab to process massive amounts of files.</p>
+                <h3 class="font-bold text-slate-900 dark:text-white mb-2"><i class="fa-solid fa-folder-tree text-blue-500 mr-2"></i>Updated: Batch Manager</h3>
+                <p>Process massive amounts of files securely.</p>
                 <ul class="list-disc pl-5 mt-2 space-y-1 text-xs">
                     <li>Upload a Master List (Excel) of PIDs you need.</li>
                     <li>Select a Folder containing thousands of files.</li>
-                    <li>System matches them and creates manageable batches (e.g. 50 files each).</li>
-                    <li>Send batches directly to Validator without browser crashes.</li>
+                    <li>System matches them and creates manageable batches.</li>
+                    <li><strong>NEW:</strong> Download a full Excel report of matches & missing files.</li>
+                    <li><strong>NEW:</strong> View missing files immediately via pop-up.</li>
                 </ul>
             </div>
              <div class="p-4 bg-gray-50 dark:bg-gray-800 rounded-xl mt-4">
@@ -751,6 +768,34 @@
                     </table>
                 </div>
             </div>
+        </div>
+    </div>
+</div>
+
+<!-- 3. Missing Files Modal (NEW) -->
+<div id="missingFilesModal" class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm hidden z-[60] flex items-center justify-center p-4 transition-opacity">
+    <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl max-w-lg w-full p-6 relative border border-gray-100 dark:border-gray-800">
+        <button onclick="closeMissingFiles()" class="absolute top-4 right-4 text-gray-400 hover:text-slate-900 dark:hover:text-white transition">
+            <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+        <div class="flex items-center gap-3 mb-4">
+            <div class="w-10 h-10 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+            <h2 class="text-lg font-bold text-slate-900 dark:text-white">Missing Files Report</h2>
+        </div>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">The following PIDs/Files from your Master List were NOT found in the source folder:</p>
+        
+        <div class="bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-lg p-3 max-h-[300px] overflow-y-auto mb-4">
+            <ul id="missingFilesList" class="space-y-1 text-xs font-mono text-slate-700 dark:text-gray-300">
+                <!-- List items via JS -->
+            </ul>
+        </div>
+        
+        <div class="flex justify-end gap-2">
+            <button onclick="downloadBatchManifest()" class="bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold px-4 py-2 rounded-lg transition">
+                <i class="fa-solid fa-download mr-2"></i>Download Full Report
+            </button>
         </div>
     </div>
 </div>
@@ -1321,7 +1366,8 @@ WTP1,D11`;
             folderMap: new Map(),
             batches: [],
             matchCount: 0,
-            missingCount: 0
+            missingCount: 0,
+            missingFiles: [] // NEW: Store actual names
         };
 
 
@@ -1488,6 +1534,7 @@ WTP1,D11`;
         // --- UI HANDLERS ---
         function toggleGuide() { document.getElementById('guideModal').classList.toggle('hidden'); }
         function closeModal() { document.getElementById('vizModal').classList.add('hidden'); }
+        function closeMissingFiles() { document.getElementById('missingFilesModal').classList.add('hidden'); }
         
         function toggleBatchMenu(e) {
             e.stopPropagation();
@@ -2885,7 +2932,6 @@ Lanjutkan?`)) {
                 
                 document.getElementById('masterCount').innerText = batcherState.targetFiles.size;
                 document.getElementById('masterListStat').classList.remove('hidden');
-                console.log("Master targets loaded:", batcherState.targetFiles);
             });
 
             folderInput.addEventListener('change', (e) => {
@@ -2922,6 +2968,7 @@ Lanjutkan?`)) {
 
                 const batchSize = parseInt(document.getElementById('batchSizeInput').value) || 50;
                 const foundFiles = [];
+                batcherState.missingFiles = []; // Reset missing list
                 let missing = 0;
 
                 // Checking Match
@@ -2930,6 +2977,7 @@ Lanjutkan?`)) {
                         foundFiles.push(batcherState.folderMap.get(target));
                     } else {
                         missing++;
+                        batcherState.missingFiles.push(target);
                     }
                 });
 
@@ -2937,6 +2985,14 @@ Lanjutkan?`)) {
                 document.getElementById('matchCount').innerText = foundFiles.length;
                 document.getElementById('missingCount').innerText = missing;
                 batcherState.matchCount = foundFiles.length;
+                batcherState.missingCount = missing;
+
+                // Show "View Missing" button if there are missing files
+                if (missing > 0) {
+                    document.getElementById('btnViewMissing').classList.remove('hidden');
+                } else {
+                    document.getElementById('btnViewMissing').classList.add('hidden');
+                }
 
                 // Create Batches
                 batcherState.batches = [];
@@ -2947,11 +3003,73 @@ Lanjutkan?`)) {
                 document.getElementById('batchCountDisplay').innerText = batcherState.batches.length;
                 renderBatchList();
                 
+                // Toggle "Send All" and "Download Manifest" buttons
                 if(foundFiles.length > 0) {
                      document.getElementById('btnSendAllBatch').classList.remove('hidden');
+                     document.getElementById('btnDownloadManifest').classList.remove('hidden');
                 } else {
                      document.getElementById('btnSendAllBatch').classList.add('hidden');
+                     // If there are missing files but no matches, we still want to allow downloading the report (for the missing part)
+                     if(missing === 0) {
+                         document.getElementById('btnDownloadManifest').classList.add('hidden');
+                     } else {
+                         document.getElementById('btnDownloadManifest').classList.remove('hidden');
+                     }
                 }
+            };
+
+            window.viewMissingFiles = function() {
+                const listContainer = document.getElementById('missingFilesList');
+                listContainer.innerHTML = '';
+                
+                batcherState.missingFiles.forEach(name => {
+                    const li = document.createElement('li');
+                    li.className = "border-b border-gray-100 dark:border-gray-800 last:border-0 py-1";
+                    li.textContent = name;
+                    listContainer.appendChild(li);
+                });
+                
+                document.getElementById('missingFilesModal').classList.remove('hidden');
+            };
+
+            window.downloadBatchManifest = function() {
+                const wb = XLSX.utils.book_new();
+
+                // 1. Summary Sheet
+                const summaryData = [
+                    { Metric: "Total Targets (Master List)", Value: batcherState.targetFiles.size },
+                    { Metric: "Total Files in Folder", Value: batcherState.folderMap.size },
+                    { Metric: "Matches Found", Value: batcherState.matchCount },
+                    { Metric: "Missing Items", Value: batcherState.missingCount },
+                    { Metric: "Batches Created", Value: batcherState.batches.length }
+                ];
+                const wsSummary = XLSX.utils.json_to_sheet(summaryData);
+                XLSX.utils.book_append_sheet(wb, wsSummary, "Summary");
+
+                // 2. Batch Details Sheet
+                const batchRows = [];
+                batcherState.batches.forEach((batch, batchIdx) => {
+                    batch.forEach(file => {
+                        batchRows.push({
+                            Batch_Number: batchIdx + 1,
+                            File_Name: file.name,
+                            Size_KB: (file.size / 1024).toFixed(2)
+                        });
+                    });
+                });
+                if(batchRows.length > 0) {
+                    const wsBatches = XLSX.utils.json_to_sheet(batchRows);
+                    XLSX.utils.book_append_sheet(wb, wsBatches, "Batch_Distribution");
+                }
+
+                // 3. Missing Files Sheet
+                if(batcherState.missingFiles.length > 0) {
+                    const missingRows = batcherState.missingFiles.map(f => ({ Missing_PID: f }));
+                    const wsMissing = XLSX.utils.json_to_sheet(missingRows);
+                    XLSX.utils.book_append_sheet(wb, wsMissing, "Missing_Items");
+                }
+
+                XLSX.writeFile(wb, "Batch_Processing_Report.xlsx");
             };
 
             function renderBatchList() {
@@ -2999,11 +3117,7 @@ Lanjutkan?`)) {
                 // 1. Switch Tab
                 document.getElementById('tabBtnValidator').click();
                 
-                // 2. Clear Queue (Optional, user preference, but safer for batching)
-                // appState.queue = []; // Keep append behavior for flexibility? 
-                // Let's Append, user can clear manually if needed.
-                
-                // 3. Trigger Handle Files Logic
+                // 2. Trigger Handle Files Logic
                 handleFiles(filesToSend);
                 
                 showToast(`Transferred ${filesToSend.length} files to Validator Queue`, 'success');
