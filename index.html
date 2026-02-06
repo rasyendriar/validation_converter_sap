@@ -204,8 +204,8 @@
             <div>
                 <h1 class="text-xl font-bold text-slate-900 dark:text-white">SAP Migration Suite</h1>
                 <p class="text-sm text-slate-500 dark:text-gray-400 mt-1 flex items-center gap-2">
-                    <span class="bg-gray-100 dark:bg-gray-800 text-xs px-2 py-0.5 rounded text-gray-600 dark:text-gray-300 font-mono">v4.12</span>
-                    Clean Export & Validation (Auto-Master)
+                    <span class="bg-gray-100 dark:bg-gray-800 text-xs px-2 py-0.5 rounded text-gray-600 dark:text-gray-300 font-mono">v4.13</span>
+                    Clean Export & Validation (Auto-Fix SPAN)
                 </p>
             </div>
             <div class="flex flex-wrap items-center gap-3">
@@ -478,11 +478,12 @@
         <button onclick="toggleGuide()" class="absolute top-6 right-6 text-gray-400 hover:text-slate-900 dark:hover:text-white transition">
             <i class="fa-solid fa-xmark text-xl"></i>
         </button>
-        <h2 class="text-2xl font-bold text-slate-900 dark:text-white mb-6">User Guide <span class="text-mitratel-red">v4.11</span></h2>
+        <h2 class="text-2xl font-bold text-slate-900 dark:text-white mb-6">User Guide <span class="text-mitratel-red">v4.13</span></h2>
         <div class="space-y-4 text-sm text-slate-600 dark:text-gray-300 overflow-y-auto max-h-[60vh] pr-2">
             <div class="p-4 bg-gray-50 dark:bg-gray-800 rounded-xl">
                 <h3 class="font-bold text-slate-900 dark:text-white mb-2"><i class="fa-solid fa-wand-magic-sparkles text-mitratel-red mr-2"></i>New Feature: Clean Export</h3>
                 <p>The system now automatically removes helper columns (like <code>STRNO_LENGTH</code>) from your exports, ensuring the file is ready for SAP upload immediately.</p>
+                <p class="mt-2 text-xs text-emerald-600 font-bold">UPDATED: If STRNO length is 17 (SPAN), PLTXT is automatically rewritten to match STRNO.</p>
             </div>
             
             <h3 class="font-bold mt-4">Visualizer Navigation</h3>
@@ -1873,10 +1874,16 @@ Lanjutkan?`)) {
                     return sa.localeCompare(sb);
                 });
 
+                // --- MODIFIED: Added Logic to Rewrite PLTXT if STRNO len is 17 ---
                 belowData.forEach(r => {
                     const s = String(r.STRNO || "");
                     const len = (s.toLowerCase() === "<na>" || s === "") ? 0 : s.length;
                     r.STRNO_LENGTH = len;
+
+                    // --- NEW RULE: Auto-Rewrite PLTXT for SPAN (Len 17) ---
+                    if (len === 17) {
+                        r.PLTXT = s; // Copy STRNO to PLTXT
+                    }
                 });
 
                 const errors = [];
