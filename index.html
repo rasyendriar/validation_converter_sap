@@ -134,6 +134,8 @@
         }
         @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
         
+        /* NEW: Force Status Badge Style */
+        .status-badge-manual { border: 1px dashed currentColor; }
     </style>
 </head>
 <body class="bg-gray-50 text-slate-800 font-sans p-4 md:p-8 dark:bg-gray-950 dark:text-gray-100 transition-colors duration-300" onclick="closeDropdowns(event)">
@@ -208,7 +210,7 @@
             <div>
                 <h1 class="text-xl font-bold text-slate-900 dark:text-white">SAP Migration Suite</h1>
                 <p class="text-sm text-slate-500 dark:text-gray-400 mt-1 flex items-center gap-2">
-                    <span class="bg-gray-100 dark:bg-gray-800 text-xs px-2 py-0.5 rounded text-gray-600 dark:text-gray-300 font-mono">v4.15</span>
+                    <span class="bg-gray-100 dark:bg-gray-800 text-xs px-2 py-0.5 rounded text-gray-600 dark:text-gray-300 font-mono">v4.16</span>
                     Batch Folder Manager Included
                 </p>
             </div>
@@ -597,22 +599,27 @@
         <button onclick="toggleGuide()" class="absolute top-6 right-6 text-gray-400 hover:text-slate-900 dark:hover:text-white transition">
             <i class="fa-solid fa-xmark text-xl"></i>
         </button>
-        <h2 class="text-2xl font-bold text-slate-900 dark:text-white mb-6">User Guide <span class="text-mitratel-red">v4.15</span></h2>
+        <h2 class="text-2xl font-bold text-slate-900 dark:text-white mb-6">User Guide <span class="text-mitratel-red">v4.16</span></h2>
         <div class="space-y-4 text-sm text-slate-600 dark:text-gray-300 overflow-y-auto max-h-[60vh] pr-2">
-            <div class="p-4 bg-gray-50 dark:bg-gray-800 rounded-xl">
-                <h3 class="font-bold text-slate-900 dark:text-white mb-2"><i class="fa-solid fa-folder-tree text-blue-500 mr-2"></i>Updated: Batch Manager</h3>
-                <p>Process massive amounts of files securely.</p>
+             <div class="p-4 bg-gray-50 dark:bg-gray-800 rounded-xl">
+                <h3 class="font-bold text-slate-900 dark:text-white mb-2"><i class="fa-solid fa-keyboard text-mitratel-red mr-2"></i>New: Keyboard Shortcuts</h3>
                 <ul class="list-disc pl-5 mt-2 space-y-1 text-xs">
-                    <li>Upload a Master List (Excel) of PIDs you need.</li>
-                    <li>Select a Folder containing thousands of files.</li>
-                    <li>System matches them and creates manageable batches.</li>
-                    <li><strong>NEW:</strong> Download a full Excel report of matches & missing files.</li>
-                    <li><strong>NEW:</strong> View missing files immediately via pop-up.</li>
+                    <li><span class="bg-gray-200 dark:bg-gray-700 px-1 rounded font-mono">← / →</span> : Navigate between files in visualizer.</li>
+                    <li><span class="bg-gray-200 dark:bg-gray-700 px-1 rounded font-mono">1-4</span> : Switch Tabs (Viz, Display, Data, Log).</li>
+                    <li><span class="bg-gray-200 dark:bg-gray-700 px-1 rounded font-mono">W/A/S/D</span> : Pan Topology View.</li>
+                    <li><span class="bg-gray-200 dark:bg-gray-700 px-1 rounded font-mono">+ / -</span> : Zoom In/Out.</li>
+                    <li><span class="bg-gray-200 dark:bg-gray-700 px-1 rounded font-mono">F</span> : Force Status Toggle (Fail <-> Pass).</li>
+                    <li><span class="bg-gray-200 dark:bg-gray-700 px-1 rounded font-mono">V</span> : Verify Structure.</li>
+                    <li><span class="bg-gray-200 dark:bg-gray-700 px-1 rounded font-mono">Esc</span> : Close visualizer.</li>
                 </ul>
             </div>
-             <div class="p-4 bg-gray-50 dark:bg-gray-800 rounded-xl mt-4">
-                <h3 class="font-bold text-slate-900 dark:text-white mb-2"><i class="fa-solid fa-wand-magic-sparkles text-mitratel-red mr-2"></i>Auto-Fix SPAN</h3>
-                <p class="mt-2 text-xs text-emerald-600 font-bold">UPDATED: If STRNO length is 17 (SPAN), PLTXT is automatically rewritten to match STRNO.</p>
+            <div class="p-4 bg-gray-50 dark:bg-gray-800 rounded-xl mt-4">
+                <h3 class="font-bold text-slate-900 dark:text-white mb-2"><i class="fa-solid fa-wand-magic-sparkles text-mitratel-red mr-2"></i>Updated: Rule 11</h3>
+                <p class="mt-2 text-xs">Validasi Inkonsistensi PID kini lebih akurat dengan memeriksa core secara <strong>Segment-to-Segment</strong> (Baris ke baris), memastikan kontinuitas kapasitas kabel.</p>
+            </div>
+            <div class="p-4 bg-gray-50 dark:bg-gray-800 rounded-xl mt-4">
+                <h3 class="font-bold text-slate-900 dark:text-white mb-2"><i class="fa-solid fa-toggle-on text-emerald-500 mr-2"></i>Manual Status Override</h3>
+                <p class="mt-2 text-xs">Anda sekarang dapat mengubah status file dari PASS ke FAIL (atau sebaliknya) secara manual jika hasil validasi sistem tidak sesuai dengan penilaian ahli Anda.</p>
             </div>
         </div>
     </div>
@@ -630,6 +637,7 @@
                         <i class="fa-solid fa-eye text-mitratel-red"></i>
                         Detail View
                         <span id="targetPidDisplay" class="font-mono text-xs bg-slate-100 dark:bg-gray-800 text-slate-600 dark:text-gray-300 px-2 py-1 rounded border border-gray-200 dark:border-gray-700"></span>
+                        <span id="vizStatusBadge" class="font-bold text-xs px-2 py-1 rounded uppercase"></span>
                     </h3>
                     <p class="text-xs text-gray-400 mt-1" id="modalFileName">Filename.xlsx</p>
                 </div>
@@ -637,15 +645,19 @@
                 <button id="btnVerifyStructure" onclick="toggleVerification()" class="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wide border transition-all">
                     <!-- Text and icon set by JS -->
                 </button>
+                 <!-- NEW: Force Toggle Button in Viz -->
+                 <button id="btnForceToggleViz" onclick="toggleForceStatusFromViz()" class="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wide border transition-all bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-300">
+                    <i class="fa-solid fa-gavel"></i> Override Status
+                </button>
             </div>
             
             <div class="flex items-center gap-3">
                 <div class="flex bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
-                    <button id="btnModalPrev" onclick="navigateFile(-1)" class="w-10 h-8 rounded-md flex items-center justify-center hover:bg-white dark:hover:bg-gray-700 shadow-sm disabled:opacity-30 disabled:shadow-none transition">
+                    <button id="btnModalPrev" onclick="navigateFile(-1)" class="w-10 h-8 rounded-md flex items-center justify-center hover:bg-white dark:hover:bg-gray-700 shadow-sm disabled:opacity-30 disabled:shadow-none transition" title="Previous (Left Arrow)">
                         <i class="fa-solid fa-chevron-left text-xs"></i>
                     </button>
                     <div class="w-px bg-gray-300 dark:bg-gray-600 mx-1 h-4 self-center"></div>
-                    <button id="btnModalNext" onclick="navigateFile(1)" class="w-10 h-8 rounded-md flex items-center justify-center hover:bg-white dark:hover:bg-gray-700 shadow-sm disabled:opacity-30 disabled:shadow-none transition">
+                    <button id="btnModalNext" onclick="navigateFile(1)" class="w-10 h-8 rounded-md flex items-center justify-center hover:bg-white dark:hover:bg-gray-700 shadow-sm disabled:opacity-30 disabled:shadow-none transition" title="Next (Right Arrow)">
                         <i class="fa-solid fa-chevron-right text-xs"></i>
                     </button>
                 </div>
@@ -774,6 +786,7 @@
 
 <!-- 3. Missing Files Modal (NEW) -->
 <div id="missingFilesModal" class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm hidden z-[60] flex items-center justify-center p-4 transition-opacity">
+<!-- ... (rest of the file content unchanged) ... -->
     <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl max-w-lg w-full p-6 relative border border-gray-100 dark:border-gray-800">
         <button onclick="closeMissingFiles()" class="absolute top-4 right-4 text-gray-400 hover:text-slate-900 dark:hover:text-white transition">
             <i class="fa-solid fa-xmark text-lg"></i>
@@ -1367,7 +1380,7 @@ WTP1,D11`;
             batches: [],
             matchCount: 0,
             missingCount: 0,
-            missingFiles: [] // NEW: Store actual names
+            missingFiles: [] 
         };
 
 
@@ -1461,6 +1474,7 @@ WTP1,D11`;
         // --- INITIALIZATION ---
         document.addEventListener("DOMContentLoaded", () => {
             GameSystem.init();
+            setupKeyboardShortcuts();
             
             // --- Parse Master Data ---
             const lines = MASTER_WC_CSV.split('\n');
@@ -1512,6 +1526,82 @@ WTP1,D11`;
                 }
             });
         });
+
+        // --- KEYBOARD SHORTCUTS ---
+        function setupKeyboardShortcuts() {
+            document.addEventListener('keydown', (e) => {
+                // Only allow shortcuts if modal is open
+                const modal = document.getElementById('vizModal');
+                if (modal.classList.contains('hidden')) return;
+
+                // Ignore if user is typing in a search input
+                if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+                // Tab Switching (1-4)
+                if(['1','2','3','4'].includes(e.key)) {
+                    if(e.key === '1') switchTab('viz');
+                    if(e.key === '2') switchTab('display');
+                    if(e.key === '3') switchTab('data');
+                    if(e.key === '4') switchTab('errors');
+                    return;
+                }
+
+                // Check if Visual Topology Tab is Active
+                const isVizActive = !document.getElementById('content-viz').classList.contains('hidden');
+                
+                // Visualizer specific controls (Zoom & Pan)
+                if (isVizActive) {
+                    const step = 50;
+                    switch(e.key.toLowerCase()) {
+                        // Panning (WASD)
+                        case "w": panViz(0, -step); break;
+                        case "a": panViz(-step, 0); break;
+                        case "s": panViz(0, step); break;
+                        case "d": panViz(step, 0); break;
+                        
+                        // Zooming (+ / -)
+                        case "c": // + key usually requires shift, but = is the unshifted key on standard keyboards
+                        case "C": changeZoom(0.1); break;
+                        case "x": 
+                        case "X": changeZoom(-0.1); break;
+                        case "z":
+                        case "Z": resetZoom(); break;
+                    }
+                }
+
+                switch(e.key) {
+                    case "q":
+		    case "Q":
+                        navigateFile(-1);
+                        break;
+                    case "e":
+                    case "E":
+                        navigateFile(1);
+                        break;
+                    case "Escape":
+                        closeModal();
+                        break;
+                    case "v":
+                    case "V":
+                        toggleVerification();
+                        break;
+                    case "f":
+                    case "F":
+                        toggleForceStatusFromViz();
+                        break;
+                }
+            });
+        }
+
+        // --- PANNING HELPER ---
+        function panViz(dx, dy) {
+            const container = document.getElementById('viz-scroll-container');
+            if(container) {
+                // Direct assignment is smoother for repetitive key press than scrollBy behavior
+                container.scrollLeft += dx;
+                container.scrollTop += dy;
+            }
+        }
 
         // --- ZOOM LOGIC ---
         function changeZoom(delta) {
@@ -1638,8 +1728,6 @@ WTP1,D11`;
             const pid = appState.targetPID;
             if(!pid) return;
 
-            const btn = document.getElementById('btnVerifyStructure');
-            
             if (GameSystem.isVerified(pid)) {
                 // Unmark
                 GameSystem.unmarkVerified(pid);
@@ -1651,8 +1739,10 @@ WTP1,D11`;
             }
             
             // Refresh table row indicator if visible
-            const rowId = appState.processed[Object.keys(appState.processed).find(k => appState.processed[k].pid === pid)]?.rowId;
-            if(rowId) updateTableRowVerifiedStatus(rowId, pid);
+            const processedItem = Object.values(appState.processed).find(p => p.pid === pid);
+            if(processedItem && processedItem.rowId) {
+                updateTableRowVerifiedStatus(processedItem.rowId, pid);
+            }
         }
 
         function updateVerifyButton(isVerified) {
@@ -1676,6 +1766,129 @@ WTP1,D11`;
             } else {
                 cell.innerHTML = `<span class="text-gray-300 text-lg"><i class="fa-regular fa-circle"></i></span>`;
             }
+        }
+
+        // --- FORCE STATUS TOGGLE LOGIC (NEW) ---
+        function toggleForceStatus(fileName) {
+            const item = appState.processed[fileName];
+            if(!item) return;
+
+            // Toggle logic
+            if (item.status === 'PASS') {
+                item.status = 'FAIL';
+                item.isManuallyOverridden = true;
+                item.originalStatus = item.originalStatus || 'PASS';
+            } else {
+                item.status = 'PASS';
+                item.isManuallyOverridden = true;
+                item.originalStatus = item.originalStatus || 'FAIL';
+            }
+
+            // Restore if back to original (optional, but let's keep it overridden to allow "Force" concept)
+            // If we want to strictly toggle, we just swap PASS/FAIL.
+
+            // Update UI components
+            recalculateStats();
+            updateRowStatusUI(item.rowId, item);
+            
+            // If open in visualizer, update that too
+            if (appState.targetPID === item.pid && !document.getElementById('vizModal').classList.contains('hidden')) {
+                updateVizStatusHeader(item);
+                updateForceToggleButton(item);
+            }
+
+            showToast(`Status updated to ${item.status}`, item.status === 'PASS' ? 'success' : 'error');
+        }
+
+        function toggleForceStatusFromViz() {
+            // Find filename from pid
+            const pid = appState.targetPID;
+            const item = Object.values(appState.processed).find(p => p.pid === pid);
+            if (item) {
+                toggleForceStatus(item.fileName);
+            }
+        }
+
+        function updateVizStatusHeader(item) {
+            const badge = document.getElementById('vizStatusBadge');
+            badge.innerText = item.status;
+            if (item.status === 'PASS') {
+                badge.className = "font-bold text-xs px-2 py-1 rounded uppercase bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300";
+            } else {
+                badge.className = "font-bold text-xs px-2 py-1 rounded uppercase bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300";
+            }
+            if (item.isManuallyOverridden) {
+                badge.classList.add('status-badge-manual');
+                badge.innerHTML += ` <i class="fa-solid fa-gavel ml-1" title="Manually Overridden"></i>`;
+            }
+        }
+        
+        function updateForceToggleButton(item) {
+             const btn = document.getElementById('btnForceToggleViz');
+             btn.classList.remove('hidden'); // Ensure visible
+             if (item.status === 'PASS') {
+                 // Option to Force Fail
+                 btn.innerHTML = `<i class="fa-solid fa-thumbs-down text-red-500"></i> Force Fail`;
+                 btn.className = "hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wide border transition-all bg-white hover:bg-red-50 border-red-200 text-red-600 dark:bg-gray-800 dark:border-gray-700 dark:text-red-400";
+             } else {
+                 // Option to Force Pass
+                 btn.innerHTML = `<i class="fa-solid fa-thumbs-up text-green-500"></i> Force Pass`;
+                 btn.className = "hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wide border transition-all bg-white hover:bg-green-50 border-green-200 text-green-600 dark:bg-gray-800 dark:border-gray-700 dark:text-green-400";
+             }
+        }
+
+        function updateRowStatusUI(rowId, item) {
+            const row = document.getElementById(rowId);
+            if (!row) return;
+
+            const statusCell = row.cells[2];
+            const actionCell = row.cells[5];
+
+            const statusClass = item.status === 'PASS' 
+                ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300" 
+                : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300";
+            
+            let statusHtml = `<span class="${statusClass} py-1 px-3 rounded-md text-xs font-bold uppercase tracking-wider">${item.status}</span>`;
+            if (item.isManuallyOverridden) {
+                statusHtml += `<div class="text-[9px] text-gray-500 mt-1"><i class="fa-solid fa-gavel"></i> Manual</div>`;
+            }
+            statusCell.innerHTML = statusHtml;
+
+            // Regenerate Action Buttons to include the Toggle
+            const toggleIcon = item.status === 'PASS' ? 'fa-thumbs-down' : 'fa-thumbs-up';
+            const toggleTitle = item.status === 'PASS' ? 'Force Fail' : 'Force Pass';
+            const toggleColor = item.status === 'PASS' ? 'text-red-500 hover:bg-red-50' : 'text-green-500 hover:bg-green-50';
+
+            // Reconstruct action buttons
+            // Note: We need url for download button. Since we don't store Blob URL in appState (it's ephemeral), 
+            // we regenerate it on click usually. Here we might need to regenerate blob or just hide it? 
+            // For simplicity, let's keep the existing structure but add the new button.
+            // CAUTION: The download URL in the original row HTML might be lost if we overwrite innerHTML completely.
+            // Better approach: Find or create the toggle button specifically.
+            
+            // Let's re-render the whole cell carefully.
+            // We need to re-create the blob URL if we want the download link to work after update.
+            // But item.wb is stored. So we can generate.
+            const wbOut = XLSX.write(item.wb, { bookType: 'xlsx', type: 'array' });
+            const blob = new Blob([wbOut], { type: "application/octet-stream" });
+            const url = URL.createObjectURL(blob);
+
+            actionCell.innerHTML = `
+                <div class="flex items-center justify-center gap-2">
+                    <button onclick="openVisualizer('${item.fileName}')" class="bg-slate-100 hover:bg-slate-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-slate-700 dark:text-white p-2 rounded-lg transition" title="Visualize">
+                       <i class="fa-solid fa-eye"></i>
+                    </button>
+                    <button onclick="toggleForceStatus('${item.fileName}')" class="bg-white border border-gray-200 dark:bg-gray-800 dark:border-gray-600 ${toggleColor} p-2 rounded-lg transition" title="${toggleTitle}">
+                       <i class="fa-solid ${toggleIcon}"></i>
+                    </button>
+                    <a href="${url}" download="VALIDATED_v4_${item.fileName}" class="bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-900/40 text-blue-600 dark:text-blue-300 p-2 rounded-lg transition" title="Download XLSX">
+                       <i class="fa-solid fa-file-excel"></i>
+                    </a>
+                    <button onclick="downloadSapTxt('${item.fileName}')" class="bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-900/20 dark:hover:bg-emerald-900/40 text-emerald-600 dark:text-emerald-300 p-2 rounded-lg transition" title="Download SAP TXT">
+                       <i class="fa-solid fa-file-code"></i>
+                    </button>
+                </div>
+            `;
         }
 
         // --- CLEAR QUEUE FUNCTION ---
@@ -1870,6 +2083,9 @@ Lanjutkan?`)) {
             btn.classList.add('opacity-50', 'cursor-not-allowed');
             btn.innerHTML = `<span class="loader border-t-white mr-2" style="width:16px;height:16px;border-width:2px;"></span> Processing...`;
 
+            // Reset stats - but wait, appState.stats tracks processed files.
+            // If we are appending to queue, maybe we shouldn't reset to 0 unless we cleared queue?
+            // Existing logic resets.
             appState.stats.total = 0;
             appState.stats.pass = 0;
             appState.stats.fail = 0;
@@ -1889,6 +2105,18 @@ Lanjutkan?`)) {
                 btn.classList.remove('opacity-50', 'cursor-not-allowed');
                 btn.innerHTML = `<i class='fa-solid fa-play mr-2 text-xs'></i> Start Validation`;
             }, 2000);
+        }
+
+        // NEW: Recalculate stats helper to handle toggles
+        function recalculateStats() {
+            let total = 0, pass = 0, fail = 0;
+            Object.values(appState.processed).forEach(item => {
+                total++;
+                if (item.status === 'PASS') pass++;
+                else fail++;
+            });
+            appState.stats = { total, pass, fail };
+            updateDashboardUI();
         }
 
         function updateDashboardUI() {
@@ -1913,18 +2141,42 @@ Lanjutkan?`)) {
                 return;
             }
 
-            const summaryData = Object.values(appState.processed).map((item, index) => ({
-                No: index + 1,
-                Nama_File: item.fileName,
-                Status: item.status, 
-                Verified: GameSystem.isVerified(item.pid) ? "YES" : "NO",
-                Total_Error: item.errors ? item.errors.length : 0,
-                Message: item.status === "PASS" ? "Semua aturan terpenuhi" : "Cek log error untuk detail"
-            }));
+            // --- REVISI FORMAT SUMMARY REPORT SESUAI REQUEST ---
+            const summaryData = Object.values(appState.processed).map((item) => {
+                // 1. Kolom PID
+                const pid = item.pid || item.fileName.replace(/\.[^/.]+$/, "");
+
+                // 2. Kolom Cek Asset (Status Custom)
+                // Bila Pass -> "Done Upload SAP (Cek)", Bila Fail -> "NY OK"
+                const cekAsset = item.status === "PASS" ? "Done Upload SAP (Cek)" : "NY OK";
+
+                // 3. Kolom Remarks (Message Error)
+                let remarks = "";
+                if (item.errors && item.errors.length > 0) {
+                    // Ambil semua pesan error
+                    const messages = item.errors.map(e => e.Message);
+                    
+                    // Deduplikasi: "bila error validation ada 1 lebih tapi sama maka samain aja"
+                    const uniqueMessages = [...new Set(messages)];
+                    
+                    // Append: "kalau beda maka append"
+                    remarks = uniqueMessages.join("; ");
+                } else if (item.status === "PASS") {
+                    remarks = "No Issues Found";
+                }
+
+                return {
+                    PID: pid,
+                    "Cek Asset": cekAsset,
+                    Remarks: remarks
+                };
+            });
 
             const wb = XLSX.utils.book_new();
             const ws = XLSX.utils.json_to_sheet(summaryData);
-            ws['!cols'] = [{wch: 5}, {wch: 30}, {wch: 10}, {wch: 10}, {wch: 15}, {wch: 40}];
+            
+            // Adjust column widths (PID: 25, Status: 25, Remarks: 100/Wide)
+            ws['!cols'] = [{wch: 25}, {wch: 25}, {wch: 100}];
 
             XLSX.utils.book_append_sheet(wb, ws, "SUMMARY");
             XLSX.writeFile(wb, "SUMMARY_REPORT.xlsx");
@@ -2130,9 +2382,9 @@ Lanjutkan?`)) {
                         return newRow;
                     });
 
-                    // Variables for Rule 11 (PID Inconsistency) - REVISED logic (Map PID->Count)
-                    let lastSpan = null;
-                    let lastPidCounts = {}; // { "PID1": count, "PID2": count }
+                    // Variables for Rule 11 (PID Inconsistency) - REVISED SEGMENT-BASED LOGIC
+                    let lastPidCounts = null; // { "PID1": count, "PID2": count }
+                    let lastCableId = null;
 
                     const colsCheck = ["LINK_DESCRIPTION", "LINK_FRM_FLOC", "LINK_TO_FLOC", "FUNCTIONAL_LOCATION_LINK_OBJECT"];
                     displayData.forEach((r, i) => {
@@ -2154,36 +2406,48 @@ Lanjutkan?`)) {
                             const cores = belowData.filter(b => {
                                 const s = String(b.STRNO || "");
                                 const p = String(b.PLTXT || "");
+                                // Filter core only (len 30), matches cable, and PLTXT is valid (not empty/KABEL)
                                 return s.startsWith(cableId) && s.length >= 30 && p && p.trim() !== "";
                             });
                             
+                            // Hitung core per PID untuk segmen ini
                             const currentPidCounts = {};
                             cores.forEach(c => {
                                 const pid = c.PLTXT;
-                                currentPidCounts[pid] = (currentPidCounts[pid] || 0) + 1;
+                                if (!pid.toUpperCase().includes("KABEL")) {
+                                    currentPidCounts[pid] = (currentPidCounts[pid] || 0) + 1;
+                                }
                             });
 
-                            const parts = cableId.split('-');
-                            let currentSpan = parts.find(p => p.startsWith('S') && p.length <= 4 && !isNaN(p.substring(1))) || "UNK";
-                            if (currentSpan === "UNK" && parts.length > 3) currentSpan = parts[3]; 
-
-                            if (lastSpan && currentSpan !== "UNK" && currentSpan !== lastSpan) {
+                            // --- NEW RULE 11 LOGIC: Segment-to-Segment Comparison ---
+                            // Compare with previous row's calculation immediately
+                            if (lastPidCounts) {
                                 for (const pid in lastPidCounts) {
+                                    // Check if PID exists in current segment (continuity check)
+                                    // Rule: "Perbedaan antara core ... maka fail"
                                     if (currentPidCounts.hasOwnProperty(pid)) {
                                         const countLast = lastPidCounts[pid];
                                         const countCurr = currentPidCounts[pid];
+                                        
                                         if (countLast !== countCurr) {
                                             errors.push({
                                                 Rule: "R11_PID_CONSISTENCY",
                                                 Row: excelRow(i),
-                                                Message: `Inkonsistensi PID ${pid}: Span ${lastSpan} (${countLast} core) -> Span ${currentSpan} (${countCurr} core).`
+                                                Message: `Inkonsistensi PID ${pid} antar Segmen: ${lastCableId} (${countLast} core) -> ${cableId} (${countCurr} core).`
                                             });
                                         }
+                                    } else {
+                                        // Optional: Warn if PID disappears completely? 
+                                        // For now, only fail on count mismatch if present in both. 
+                                        // If user implies "disappearing" is also fail, we'd add check here.
+                                        // But usually dropping a service at a generic point is valid termination.
                                     }
                                 }
                             }
-                            lastSpan = currentSpan;
+
+                            // Update state for next iteration
                             lastPidCounts = currentPidCounts;
+                            lastCableId = cableId;
                         }
                     });
                 }
@@ -2255,37 +2519,18 @@ Lanjutkan?`)) {
                     status: statusStr,
                     errors: errors,
                     sapTxt: sapTxt,
-                    rowId: rowId // Store rowId for updating verification status
+                    rowId: rowId,
+                    isManuallyOverridden: false // New property for Force Status
                 };
                 
                 appState.processedKeys = Object.keys(appState.processed);
 
-                const wbOut = XLSX.write(newWb, { bookType: 'xlsx', type: 'array' });
-                const blob = new Blob([wbOut], { type: "application/octet-stream" });
-                const url = URL.createObjectURL(blob);
-
-                const statusClass = isPass ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300" : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300";
-                statusCell.innerHTML = `<span class="${statusClass} py-1 px-3 rounded-md text-xs font-bold uppercase tracking-wider">${statusStr}</span>`;
-                
-                // Initialize Verification Cell
+                // Initial UI Render
+                updateRowStatusUI(rowId, appState.processed[file.name]);
                 updateTableRowVerifiedStatus(rowId, pid);
 
                 msgCell.innerHTML = isPass ? "<span class='text-green-600 dark:text-green-400 font-medium'><i class='fa-solid fa-check-circle mr-1'></i> Validated Successfully</span>" : `<span class='text-red-600 dark:text-red-400 font-medium'><i class='fa-solid fa-triangle-exclamation mr-1'></i> Found ${errors.length} errors</span>`;
 
-                actionCell.innerHTML = `
-                    <div class="flex items-center justify-center gap-2">
-                        <button onclick="openVisualizer('${file.name}')" class="bg-slate-100 hover:bg-slate-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-slate-700 dark:text-white p-2 rounded-lg transition" title="Visualize">
-                           <i class="fa-solid fa-eye"></i>
-                        </button>
-                        <a href="${url}" download="VALIDATED_v4_${file.name}" class="bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-900/40 text-blue-600 dark:text-blue-300 p-2 rounded-lg transition" title="Download XLSX">
-                           <i class="fa-solid fa-file-excel"></i>
-                        </a>
-                        <button onclick="downloadSapTxt('${file.name}')" class="bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-900/20 dark:hover:bg-emerald-900/40 text-emerald-600 dark:text-emerald-300 p-2 rounded-lg transition" title="Download SAP TXT">
-                           <i class="fa-solid fa-file-code"></i>
-                        </button>
-                    </div>
-                `;
-                
                 // Re-apply filter if active (to hide/show this new row)
                 if(window.currentQueueFilter && window.currentQueueFilter !== 'all') {
                     filterQueueTable();
@@ -2331,6 +2576,10 @@ Lanjutkan?`)) {
             appState.targetPID = data.pid;
             document.getElementById('modalFileName').innerText = fileName;
             document.getElementById('targetPidDisplay').innerText = data.pid;
+            
+            updateVizStatusHeader(data);
+            updateForceToggleButton(data);
+
             document.getElementById('vizModal').classList.remove('hidden');
             
             // Check verification status and update button
