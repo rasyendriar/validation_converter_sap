@@ -210,8 +210,8 @@
             <div>
                 <h1 class="text-xl font-bold text-slate-900 dark:text-white">SAP Migration Suite</h1>
                 <p class="text-sm text-slate-500 dark:text-gray-400 mt-1 flex items-center gap-2">
-                    <span class="bg-gray-100 dark:bg-gray-800 text-xs px-2 py-0.5 rounded text-gray-600 dark:text-gray-300 font-mono">v4.16</span>
-                    Batch Folder Manager Included
+                    <span class="bg-gray-100 dark:bg-gray-800 text-xs px-2 py-0.5 rounded text-gray-600 dark:text-gray-300 font-mono">v4.19</span>
+                    Validation Rules (R13, R14, R15)
                 </p>
             </div>
             <div class="flex flex-wrap items-center gap-3">
@@ -599,7 +599,7 @@
         <button onclick="toggleGuide()" class="absolute top-6 right-6 text-gray-400 hover:text-slate-900 dark:hover:text-white transition">
             <i class="fa-solid fa-xmark text-xl"></i>
         </button>
-        <h2 class="text-2xl font-bold text-slate-900 dark:text-white mb-6">User Guide <span class="text-mitratel-red">v4.16</span></h2>
+        <h2 class="text-2xl font-bold text-slate-900 dark:text-white mb-6">User Guide <span class="text-mitratel-red">v4.19</span></h2>
         <div class="space-y-4 text-sm text-slate-600 dark:text-gray-300 overflow-y-auto max-h-[60vh] pr-2">
              <div class="p-4 bg-gray-50 dark:bg-gray-800 rounded-xl">
                 <h3 class="font-bold text-slate-900 dark:text-white mb-2"><i class="fa-solid fa-keyboard text-mitratel-red mr-2"></i>New: Keyboard Shortcuts</h3>
@@ -612,6 +612,12 @@
                     <li><span class="bg-gray-200 dark:bg-gray-700 px-1 rounded font-mono">V</span> : Verify Structure.</li>
                     <li><span class="bg-gray-200 dark:bg-gray-700 px-1 rounded font-mono">Esc</span> : Close visualizer.</li>
                 </ul>
+            </div>
+            <div class="p-4 bg-gray-50 dark:bg-gray-800 rounded-xl mt-4">
+                <h3 class="font-bold text-slate-900 dark:text-white mb-2"><i class="fa-solid fa-anchor text-mitratel-red mr-2"></i>New: Rule 13, 14 & 15 (Anchor PID)</h3>
+                <p class="mt-2 text-xs"><strong>R13:</strong> Anchor PID (dari nama file) harus muncul setidaknya sekali di file.</p>
+                <p class="mt-1 text-xs"><strong>R14:</strong> Anchor PID harus ditemukan di <strong>Segmen Pertama</strong> (Rentetan core paling awal dalam file).</p>
+                <p class="mt-1 text-xs"><strong>R15:</strong> Anchor PID harus ditemukan di <strong>SEMUA Segmen</strong> yang ada dalam file (Universal Segment Presence). Tidak boleh ada segmen kabel yang "bolong" tanpa PID project.</p>
             </div>
             <div class="p-4 bg-gray-50 dark:bg-gray-800 rounded-xl mt-4">
                 <h3 class="font-bold text-slate-900 dark:text-white mb-2"><i class="fa-solid fa-wand-magic-sparkles text-mitratel-red mr-2"></i>Updated: Rule 11</h3>
@@ -1911,6 +1917,32 @@ WTP1,D11`;
             document.getElementById('fileElem').value = '';
         }
 
+        // --- HELPER FUNCTION: EXTRACT ANCHOR PID ---
+        // Consistent PID extraction logic for both display and validation (Rule 13)
+        function extractAnchorPid(filename) {
+            const nameBase = filename.replace(/\.[^/.]+$/, ""); // Remove extension
+            // Try standard pattern
+            const pidMatch = nameBase.match(/\b\d{2}[A-Z]{2}\d{2}[A-Z]\d{4}\b/i);
+            
+            if (pidMatch) {
+                return pidMatch[0].toUpperCase();
+            }
+            
+            // If no regex match, fallback to cleaning common prefixes/suffixes manually
+            let clean = nameBase.toUpperCase();
+            
+            // Handle prefixes
+            clean = clean.replace(/^VALIDATED_/, '');
+            clean = clean.replace(/^REVISI_/, '');
+            
+            // Handle suffixes
+            clean = clean.replace(/_VALIDATED$/, '');
+            clean = clean.replace(/_REVISI$/, '');
+            clean = clean.replace(/_FINAL$/, '');
+
+            return clean;
+        }
+
         // --- SAP TXT helpers --- (Unchanged)
         function sanitizeForTsvCell(val) {
             if (val === null || val === undefined) return '';
@@ -2032,17 +2064,8 @@ Lanjutkan?`)) {
                 appState.queue.push({ file, id: fileId });
                 added = true;
 
-                // --- REVISI: Extract PID Cleaner from Filename for Display ---
-                const nameBase = file.name.split('.').slice(0, -1).join('.');
-                // Try finding standard pattern first
-                const pidMatch = nameBase.match(/\b\d{2}[A-Z]{2}\d{2}[A-Z]\d{4}\b/i);
-                let targetPid = pidMatch ? pidMatch[0].toUpperCase() : nameBase;
-                
-                // Fallback cleanup if pattern not found but likely has prefix
-                if (!pidMatch) {
-                    if (targetPid.toUpperCase().startsWith("VALIDATED_")) targetPid = targetPid.substring(10);
-                    else if (targetPid.toUpperCase().startsWith("REVISI_")) targetPid = targetPid.substring(7);
-                }
+                // --- REVISI: Menggunakan Helper extractAnchorPid agar konsisten dengan Rule 13 ---
+                const targetPid = extractAnchorPid(file.name);
 
                 const tr = document.createElement('tr');
                 tr.id = fileId;
@@ -2297,6 +2320,56 @@ Lanjutkan?`)) {
                 const seenStrno = new Set();
                 const duplicates = new Set();
 
+                // --- EXTRACT ANCHOR PID USING HELPER ---
+                const anchorPid = extractAnchorPid(file.name);
+
+                // --- PRE-PROCESS: GROUP BY SEGMENT FOR RULE 14 & 15 ---
+                // Helper to track which segments contain the Anchor PID
+                const segmentMap = {}; // { "SEGMENT_ID": boolean (hasAnchor?) }
+                let segmentOrder = []; // To keep track of order (for finding first segment)
+
+                belowData.forEach((r, i) => {
+                    if (r.STRNO_LENGTH === 30) {
+                         const strno = String(r.STRNO || "");
+                         // Asumsi 26 digit pertama adalah ID Segment/Kabel (STRNO Core = [Segment 26][Core 4])
+                         const segId = strno.substring(0, 26);
+                         
+                         // Init segment if new
+                         if (!segmentMap.hasOwnProperty(segId)) {
+                             segmentMap[segId] = false;
+                             segmentOrder.push(segId);
+                         }
+
+                         const p = String(r.PLTXT || "").toUpperCase().trim();
+                         if (p.includes(anchorPid)) {
+                             segmentMap[segId] = true;
+                         }
+                    }
+                });
+
+                // --- RULE 14: ANCHOR PID IN FIRST SEGMENT ---
+                if (segmentOrder.length > 0) {
+                    const firstSegId = segmentOrder[0];
+                    if (segmentMap[firstSegId] === false) {
+                        errors.push({
+                            Rule: "R14_ANCHOR_START",
+                            Row: "FIRST_SEGMENT",
+                            Message: `Anchor PID '${anchorPid}' wajib ada di Segmen Pertama (${firstSegId}). File ini dimulai dengan project lain/kosong.`
+                        });
+                    }
+                }
+
+                // --- NEW RULE 15: ANCHOR PID IN ALL SEGMENTS ---
+                segmentOrder.forEach(segId => {
+                    if (segmentMap[segId] === false) {
+                        errors.push({
+                            Rule: "R15_ANCHOR_SEGMENT_MISSING",
+                            Row: "SEGMENT_CHECK",
+                            Message: `Segmen ${segId} tidak memuat Anchor PID '${anchorPid}' sama sekali. Anchor PID wajib ada di setiap segmen.`
+                        });
+                    }
+                });
+
                 belowData.forEach((r, i) => {
                     const len = r.STRNO_LENGTH;
                     const strno = String(r.STRNO || "").trim();
@@ -2347,6 +2420,28 @@ Lanjutkan?`)) {
                         }
                     }
                 });
+
+                // --- NEW RULE 13: ANCHOR PID EXISTENCE ---
+                // Logic: Anchor PID from filename must exist at least once in PLTXT column for rows where STRNO_LENGTH == 30 (Core)
+                let anchorPidFound = false;
+                for (const r of belowData) {
+                    if (r.STRNO_LENGTH === 30) {
+                        const p = String(r.PLTXT || "").toUpperCase().trim();
+                        // Gunakan includes untuk pencarian parsial (antisipasi spasi/typo kecil)
+                        if (p.includes(anchorPid)) {
+                            anchorPidFound = true;
+                            break; // Cukup ketemu sekali
+                        }
+                    }
+                }
+
+                if (!anchorPidFound) {
+                    errors.push({
+                        Rule: "R13_ANCHOR_MISSING",
+                        Row: "GLOBAL",
+                        Message: `Anchor PID '${anchorPid}' (dari Nama File) tidak ditemukan sama sekali pada data Core (STRNO 30, kolom PLTXT). Pastikan nama file sesuai isi.`
+                    });
+                }
 
                 let segmentBuffer = [];
                 for (let i = 0; i <= belowData.length; i++) {
@@ -2500,22 +2595,12 @@ Lanjutkan?`)) {
                 const wsSum = XLSX.utils.json_to_sheet(summary);
                 XLSX.utils.book_append_sheet(newWb, wsSum, "VALIDATION_SUMMARY");
 
-                // --- REVISI: Extract Proper PID for internal storage/highlight ---
-                const nameBase = file.name.split('.').slice(0, -1).join('.');
-                const pidMatch = nameBase.match(/\b\d{2}[A-Z]{2}\d{2}[A-Z]\d{4}\b/i);
-                // Priority: Regex Match > Cleaned Prefix > Raw Filename
-                let pid = pidMatch ? pidMatch[0].toUpperCase() : nameBase;
-                if (!pidMatch) {
-                    if (pid.toUpperCase().startsWith("VALIDATED_")) pid = pid.substring(10);
-                    else if (pid.toUpperCase().startsWith("REVISI_")) pid = pid.substring(7);
-                }
-
                 appState.processed[file.name] = {
                     fileName: file.name,
                     wb: newWb, 
                     belowData: belowData,
                     displayData: displayData,
-                    pid: pid, // Use the clean PID
+                    pid: anchorPid, // Use the clean Anchor PID
                     status: statusStr,
                     errors: errors,
                     sapTxt: sapTxt,
@@ -2527,7 +2612,7 @@ Lanjutkan?`)) {
 
                 // Initial UI Render
                 updateRowStatusUI(rowId, appState.processed[file.name]);
-                updateTableRowVerifiedStatus(rowId, pid);
+                updateTableRowVerifiedStatus(rowId, anchorPid);
 
                 msgCell.innerHTML = isPass ? "<span class='text-green-600 dark:text-green-400 font-medium'><i class='fa-solid fa-check-circle mr-1'></i> Validated Successfully</span>" : `<span class='text-red-600 dark:text-red-400 font-medium'><i class='fa-solid fa-triangle-exclamation mr-1'></i> Found ${errors.length} errors</span>`;
 
@@ -2790,7 +2875,7 @@ Lanjutkan?`)) {
 
             // --- FIXED: SVG PATHS (Replaces unreliable Fonts) ---
             const iconPaths = {
-                network: "M64 32C28.7 32 0 60.7 0 96v256c0 35.3 28.7 64 64 64h128v64H128c-17.7 0-32 14.3-32 32s14.3 32 32 32h256c17.7 0 32-14.3 32-32s-14.3-32-32-32H320v-64h128c35.3 0 64-28.7 64-64V96c0-35.3-28.7-64-64-64H64zM32 96c0-17.7 14.3-32 32-32h448c17.7 0 32 14.3 32 32v256c0 17.7-14.3 32-32 32H64c-17.7 0-32-14.3-32-32V96z",
+                network: "M64 32C28.7 32 0 60.7 0 96v256c0 35.3 28.7 64 64 64h128v64H128c-17.7 0-32 14.3-32 32s14.3 32 32 32h256c17.7 0 32-14.3 32-32s-14.3-32-32-32H320v-64h128c35.3 0 64-28.7 64-64V96c0-35.3-28.7-64-64-64H64zM32 96c0-17.7 14.3-32 32-32h448c17.7 0 32 14.3 32 32v256c0 17.7-14.3 32 32 32H64c-17.7 0-32-14.3-32-32V96z",
                 circleDot: "M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zm0-352a96 96 0 1 1 0 192 96 96 0 1 1 0-192z",
                 box: "M32 32H288c17.7 0 32 14.3 32 32V96c0 17.7-14.3 32-32 32H32C14.3 128 0 113.7 0 96V64C0 46.3 14.3 32 32 32zm0 128H288V416c0 35.3-28.7 64-64 64H96c-35.3 0-64-28.7-64-64V160z",
                 plug: "M0 256a256 256 0 1 1 512 0A256 256 0 1 1 0 256z M188.3 147.1c-7.6 4.2-12.3 12.3-12.3 20.9V344c0 8.7 4.7 16.7 12.3 20.9s16.8 4.1 24.3-.5l144-88c7.1-4.4 11.5-12.1 11.5-20.5s-4.4-16.1-11.5-20.5l-144-88c-7.4-4.5-16.7-4.7-24.3-.5z", // Actually triangle play for generic
