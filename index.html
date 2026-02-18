@@ -182,7 +182,6 @@
                 <button id="tabBtnValidator" class="px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 bg-gray-50 text-slate-900 shadow-sm dark:bg-gray-700 dark:text-white">
                     <i class="fa-solid fa-file-shield mr-2 text-mitratel-red"></i>Validator
                 </button>
-                <!-- NEW TAB: BATCHER -->
                 <button id="tabBtnBatcher" class="px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 text-slate-500 hover:text-slate-900 dark:text-gray-400 dark:hover:text-white">
                     <i class="fa-solid fa-folder-tree mr-2"></i>Batcher
                 </button>
@@ -210,8 +209,8 @@
             <div>
                 <h1 class="text-xl font-bold text-slate-900 dark:text-white">SAP Migration Suite</h1>
                 <p class="text-sm text-slate-500 dark:text-gray-400 mt-1 flex items-center gap-2">
-                    <span class="bg-gray-100 dark:bg-gray-800 text-xs px-2 py-0.5 rounded text-gray-600 dark:text-gray-300 font-mono">v4.19</span>
-                    Validation Rules (R13, R14, R15)
+                    <span class="bg-gray-100 dark:bg-gray-800 text-xs px-2 py-0.5 rounded text-gray-600 dark:text-gray-300 font-mono">v4.30 (Updated R19)</span>
+                    Validation Rules
                 </p>
             </div>
             <div class="flex flex-wrap items-center gap-3">
@@ -298,7 +297,7 @@
         </div>
 
         <!-- Summary Dashboard -->
-        <div id="summary-dashboard" class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 hidden animate-fade-in">
+        <div id="summary-dashboard" class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8 hidden animate-fade-in">
             <!-- Total -->
             <div class="bg-white dark:bg-gray-800 p-5 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm flex items-center justify-between">
                 <div>
@@ -312,17 +311,27 @@
             <!-- Passed -->
             <div class="bg-white dark:bg-gray-800 p-5 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm flex items-center justify-between">
                 <div>
-                    <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Passed Validation</p>
+                    <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Passed</p>
                     <p class="text-3xl font-bold text-emerald-600 dark:text-emerald-400 mt-1" id="stat-pass">0</p>
                 </div>
                 <div class="w-10 h-10 rounded-full bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
                     <i class="fa-solid fa-check"></i>
                 </div>
             </div>
+             <!-- Warning (NEW) -->
+             <div class="bg-white dark:bg-gray-800 p-5 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm flex items-center justify-between">
+                <div>
+                    <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Warning</p>
+                    <p class="text-3xl font-bold text-orange-500 dark:text-orange-400 mt-1" id="stat-warning">0</p>
+                </div>
+                <div class="w-10 h-10 rounded-full bg-orange-50 dark:bg-orange-900/20 text-orange-500 dark:text-orange-400 flex items-center justify-center">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                </div>
+            </div>
             <!-- Failed -->
             <div class="bg-white dark:bg-gray-800 p-5 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm flex items-center justify-between">
                 <div>
-                    <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Failed Validation</p>
+                    <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Failed</p>
                     <p class="text-3xl font-bold text-mitratel-red mt-1" id="stat-fail">0</p>
                 </div>
                 <div class="w-10 h-10 rounded-full bg-red-50 dark:bg-red-900/20 text-mitratel-red flex items-center justify-center">
@@ -360,6 +369,8 @@
                 <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-1 flex shadow-sm">
                     <button onclick="setQueueFilter('all')" id="filter-btn-all" class="px-3 py-1.5 text-xs font-bold rounded-lg bg-slate-800 text-white shadow-md transform scale-105 transition-all">ALL</button>
                     <button onclick="setQueueFilter('PASS')" id="filter-btn-pass" class="px-3 py-1.5 text-xs font-bold rounded-lg text-gray-500 hover:text-green-600 hover:bg-green-50 dark:text-gray-400 dark:hover:bg-green-900/20 transition-all">PASS</button>
+                    <!-- NEW WARNING FILTER -->
+                    <button onclick="setQueueFilter('WARNING')" id="filter-btn-warning" class="px-3 py-1.5 text-xs font-bold rounded-lg text-gray-500 hover:text-orange-600 hover:bg-orange-50 dark:text-gray-400 dark:hover:bg-orange-900/20 transition-all">WARN</button>
                     <button onclick="setQueueFilter('FAIL')" id="filter-btn-fail" class="px-3 py-1.5 text-xs font-bold rounded-lg text-gray-500 hover:text-red-600 hover:bg-red-50 dark:text-gray-400 dark:hover:bg-red-900/20 transition-all">FAIL</button>
                 </div>
             </div>
@@ -386,8 +397,10 @@
     </div>
 </div>
 
+<!-- ... (Rest of HTML for Tabs: Batcher, Converter, Modals, etc. remains unchanged) ... -->
 <!-- TAB: BATCHER (NEW FEATURE) -->
 <div id="tab-batcher" class="hidden fade-in">
+    <!-- ... (Tab Batcher Content Unchanged) ... -->
     <div class="max-w-7xl mx-auto">
         <div class="bg-white dark:bg-gray-900 w-full rounded-2xl shadow-xl shadow-gray-200/50 dark:shadow-none overflow-hidden border border-gray-100 dark:border-gray-800 p-8">
             <div class="border-b border-gray-100 dark:border-gray-800 pb-6 mb-8 flex justify-between items-center">
@@ -501,8 +514,9 @@
     </div>
 </div>
 
-<!-- TAB: CONVERTER -->
+<!-- TAB: CONVERTER (Content Unchanged) -->
 <div id="tab-converter" class="hidden fade-in">
+   <!-- ... (Converter Content) ... -->
     <div class="max-w-4xl mx-auto">
         <div class="bg-white dark:bg-gray-900 w-full rounded-2xl shadow-xl shadow-gray-200/50 dark:shadow-none overflow-hidden border border-gray-100 dark:border-gray-800">
             <!-- Header -->
@@ -592,6 +606,7 @@
     </div>
 </div>
 
+<!-- ... (Modals remain unchanged) ... -->
 <!-- MODALS -->
 <!-- 1. Guide Modal -->
 <div id="guideModal" class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4 transition-opacity">
@@ -599,7 +614,7 @@
         <button onclick="toggleGuide()" class="absolute top-6 right-6 text-gray-400 hover:text-slate-900 dark:hover:text-white transition">
             <i class="fa-solid fa-xmark text-xl"></i>
         </button>
-        <h2 class="text-2xl font-bold text-slate-900 dark:text-white mb-6">User Guide <span class="text-mitratel-red">v4.19</span></h2>
+        <h2 class="text-2xl font-bold text-slate-900 dark:text-white mb-6">User Guide <span class="text-mitratel-red">v4.30</span></h2>
         <div class="space-y-4 text-sm text-slate-600 dark:text-gray-300 overflow-y-auto max-h-[60vh] pr-2">
              <div class="p-4 bg-gray-50 dark:bg-gray-800 rounded-xl">
                 <h3 class="font-bold text-slate-900 dark:text-white mb-2"><i class="fa-solid fa-keyboard text-mitratel-red mr-2"></i>New: Keyboard Shortcuts</h3>
@@ -613,24 +628,38 @@
                     <li><span class="bg-gray-200 dark:bg-gray-700 px-1 rounded font-mono">Esc</span> : Close visualizer.</li>
                 </ul>
             </div>
+             <!-- New Rules Explanation -->
+             <div class="p-4 bg-orange-50 dark:bg-orange-900/10 rounded-xl mt-4 border border-orange-100 dark:border-orange-800">
+                <h3 class="font-bold text-slate-900 dark:text-white mb-2"><i class="fa-solid fa-star text-orange-500 mr-2"></i>New Rules (v4.30)</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                    <div>
+                        <strong class="text-red-600 dark:text-red-400">R16: Anti-Split (FAIL)</strong>
+                        <p class="mt-1">Project ID dalam satu segmen tidak boleh terputus. Harus berurutan.</p>
+                    </div>
+                    <div>
+                        <strong class="text-red-600 dark:text-red-400">R17: Sequential (FAIL)</strong>
+                        <p class="mt-1">Urutan aset anak (JC01, KU01) harus mulai dari 01 dan tidak boleh ada gap.</p>
+                    </div>
+                    <div>
+                        <strong class="text-orange-600 dark:text-orange-400">R18: High Occupancy (WARN)</strong>
+                        <p class="mt-1">Peringatan jika satu PID menggunakan lebih dari 4 core dalam satu segmen.</p>
+                    </div>
+                     <div>
+                        <strong class="text-red-600 dark:text-red-400">R19: Connectivity (FAIL)</strong>
+                        <p class="mt-1">Check konektivitas pada Segmen (STRNO 21) di below_ring. Memastikan rantai OTB-ODC, ODC-ODC, ODC-CLOSURE terhubung.</p>
+                    </div>
+                </div>
+            </div>
             <div class="p-4 bg-gray-50 dark:bg-gray-800 rounded-xl mt-4">
-                <h3 class="font-bold text-slate-900 dark:text-white mb-2"><i class="fa-solid fa-anchor text-mitratel-red mr-2"></i>New: Rule 13, 14 & 15 (Anchor PID)</h3>
+                <h3 class="font-bold text-slate-900 dark:text-white mb-2"><i class="fa-solid fa-anchor text-mitratel-red mr-2"></i>Rule 13, 14 & 15 (Anchor PID)</h3>
                 <p class="mt-2 text-xs"><strong>R13:</strong> Anchor PID (dari nama file) harus muncul setidaknya sekali di file.</p>
                 <p class="mt-1 text-xs"><strong>R14:</strong> Anchor PID harus ditemukan di <strong>Segmen Pertama</strong> (Rentetan core paling awal dalam file).</p>
                 <p class="mt-1 text-xs"><strong>R15:</strong> Anchor PID harus ditemukan di <strong>SEMUA Segmen</strong> yang ada dalam file (Universal Segment Presence). Tidak boleh ada segmen kabel yang "bolong" tanpa PID project.</p>
             </div>
-            <div class="p-4 bg-gray-50 dark:bg-gray-800 rounded-xl mt-4">
-                <h3 class="font-bold text-slate-900 dark:text-white mb-2"><i class="fa-solid fa-wand-magic-sparkles text-mitratel-red mr-2"></i>Updated: Rule 11</h3>
-                <p class="mt-2 text-xs">Validasi Inkonsistensi PID kini lebih akurat dengan memeriksa core secara <strong>Segment-to-Segment</strong> (Baris ke baris), memastikan kontinuitas kapasitas kabel.</p>
-            </div>
-            <div class="p-4 bg-gray-50 dark:bg-gray-800 rounded-xl mt-4">
-                <h3 class="font-bold text-slate-900 dark:text-white mb-2"><i class="fa-solid fa-toggle-on text-emerald-500 mr-2"></i>Manual Status Override</h3>
-                <p class="mt-2 text-xs">Anda sekarang dapat mengubah status file dari PASS ke FAIL (atau sebaliknya) secara manual jika hasil validasi sistem tidak sesuai dengan penilaian ahli Anda.</p>
-            </div>
         </div>
     </div>
 </div>
-
+<!-- Viz Modal & Missing Files Modal omitted for brevity but assumed present unchanged -->
 <!-- 2. Viz Modal (Full Screen) -->
 <div id="vizModal" class="fixed inset-0 bg-gray-900/80 backdrop-blur-sm hidden z-50 flex flex-col transition-opacity duration-300">
     <!-- Content same as before, simplified for brevity in this view but fully preserved in output -->
@@ -732,12 +761,22 @@
 
             <!-- Tenant Data -->
             <div id="content-data" class="absolute inset-0 p-8 hidden flex flex-col bg-white dark:bg-gray-900">
-                <div class="flex justify-between items-center mb-6">
-                    <div class="relative w-96">
+                <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+                    <div class="relative w-full md:w-80">
                         <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
                         <input type="text" id="tableSearch" placeholder="Search STRNO, PID..." class="w-full pl-10 pr-4 py-2 bg-gray-50 dark:bg-gray-800 border-none rounded-lg text-sm focus:ring-2 focus:ring-mitratel-red focus:outline-none dark:text-white" onkeyup="filterTable()">
                     </div>
-                    <div class="text-xs font-mono text-gray-500">
+                    
+                    <!-- New Filter Buttons -->
+                    <div class="flex items-center gap-2 overflow-x-auto w-full md:w-auto pb-1 md:pb-0">
+                         <button onclick="setLenFilter('all')" id="len-btn-all" class="px-3 py-1.5 text-xs font-bold rounded-lg bg-mitratel-red text-white transition shadow-sm whitespace-nowrap">ALL</button>
+                         <button onclick="setLenFilter('17')" id="len-btn-17" class="px-3 py-1.5 text-xs font-bold rounded-lg bg-gray-100 text-gray-500 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700 transition whitespace-nowrap">SPAN (17)</button>
+                         <button onclick="setLenFilter('21')" id="len-btn-21" class="px-3 py-1.5 text-xs font-bold rounded-lg bg-gray-100 text-gray-500 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700 transition whitespace-nowrap">SEG (21)</button>
+                         <button onclick="setLenFilter('26')" id="len-btn-26" class="px-3 py-1.5 text-xs font-bold rounded-lg bg-gray-100 text-gray-500 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700 transition whitespace-nowrap">ELM (26)</button>
+                         <button onclick="setLenFilter('30')" id="len-btn-30" class="px-3 py-1.5 text-xs font-bold rounded-lg bg-gray-100 text-gray-500 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700 transition whitespace-nowrap">CORE (30)</button>
+                    </div>
+
+                    <div class="text-xs font-mono text-gray-500 whitespace-nowrap">
                         <span id="showStart">0</span>-<span id="showEnd">0</span> of <span id="totalRows">0</span>
                     </div>
                 </div>
@@ -792,7 +831,6 @@
 
 <!-- 3. Missing Files Modal (NEW) -->
 <div id="missingFilesModal" class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm hidden z-[60] flex items-center justify-center p-4 transition-opacity">
-<!-- ... (rest of the file content unchanged) ... -->
     <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl max-w-lg w-full p-6 relative border border-gray-100 dark:border-gray-800">
         <button onclick="closeMissingFiles()" class="absolute top-4 right-4 text-gray-400 hover:text-slate-900 dark:hover:text-white transition">
             <i class="fa-solid fa-xmark text-lg"></i>
@@ -848,7 +886,7 @@
             document.documentElement.classList.remove('dark');
         }
 
-        // --- MASTER DATA WORK CENTER ---
+        // --- MASTER DATA WORK CENTER (Unchanged) ---
         const MASTER_WC_CSV = `STORT,ARBPL
 AMB0,D12
 BAU0,D11
@@ -1376,8 +1414,9 @@ WTP1,D11`;
             rowsPerPage: 100,
             targetPID: "",
             currentFileIndex: -1, 
-            stats: { total: 0, pass: 0, fail: 0 },
-            workCenterData: new Map() 
+            stats: { total: 0, pass: 0, fail: 0, warning: 0 }, // Added warning to stats
+            workCenterData: new Map(),
+            currentLenFilter: 'all' // New State for Length Filter
         };
 
         const batcherState = {
@@ -1660,12 +1699,15 @@ WTP1,D11`;
             currentQueueFilter = status;
             
             // Update Buttons
-            ['all', 'pass', 'fail'].forEach(s => {
-                const btn = document.getElementById(`filter-btn-${s}`);
+            ['all', 'pass', 'fail', 'warning'].forEach(s => {
+                const btn = document.getElementById(`filter-btn-${s.toLowerCase()}`);
+                if(!btn) return;
+
                 if (s.toUpperCase() === status.toUpperCase() || (s === 'all' && status === 'all')) {
                     if(s === 'all') btn.className = "px-3 py-1.5 text-xs font-bold rounded-lg bg-slate-800 text-white shadow-md transform scale-105 transition-all";
                     if(s === 'pass') btn.className = "px-3 py-1.5 text-xs font-bold rounded-lg bg-green-500 text-white shadow-md transform scale-105 transition-all";
                     if(s === 'fail') btn.className = "px-3 py-1.5 text-xs font-bold rounded-lg bg-mitratel-red text-white shadow-md transform scale-105 transition-all";
+                    if(s === 'warning') btn.className = "px-3 py-1.5 text-xs font-bold rounded-lg bg-orange-500 text-white shadow-md transform scale-105 transition-all";
                 } else {
                     btn.className = "px-3 py-1.5 text-xs font-bold rounded-lg text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700 transition-all";
                 }
@@ -1693,6 +1735,9 @@ WTP1,D11`;
                     let matchesFilter = true;
 
                     if (currentQueueFilter !== 'all') {
+                        // Strict check to differentiate FAIL vs WARNING
+                        // Status text might contain extra chars, so simple .includes is usually fine
+                        // But if filter is FAIL, we want to match FAIL, not WARNING.
                         if (!statusText.toUpperCase().includes(currentQueueFilter.toUpperCase())) {
                             matchesFilter = false;
                         }
@@ -1780,7 +1825,7 @@ WTP1,D11`;
             if(!item) return;
 
             // Toggle logic
-            if (item.status === 'PASS') {
+            if (item.status === 'PASS' || item.status === 'WARNING') {
                 item.status = 'FAIL';
                 item.isManuallyOverridden = true;
                 item.originalStatus = item.originalStatus || 'PASS';
@@ -1820,6 +1865,8 @@ WTP1,D11`;
             badge.innerText = item.status;
             if (item.status === 'PASS') {
                 badge.className = "font-bold text-xs px-2 py-1 rounded uppercase bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300";
+            } else if (item.status === 'WARNING') {
+                badge.className = "font-bold text-xs px-2 py-1 rounded uppercase bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300";
             } else {
                 badge.className = "font-bold text-xs px-2 py-1 rounded uppercase bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300";
             }
@@ -1850,9 +1897,14 @@ WTP1,D11`;
             const statusCell = row.cells[2];
             const actionCell = row.cells[5];
 
-            const statusClass = item.status === 'PASS' 
-                ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300" 
-                : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300";
+            let statusClass = "";
+            if (item.status === 'PASS') {
+                statusClass = "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300";
+            } else if (item.status === 'WARNING') {
+                statusClass = "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300";
+            } else {
+                statusClass = "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300";
+            }
             
             let statusHtml = `<span class="${statusClass} py-1 px-3 rounded-md text-xs font-bold uppercase tracking-wider">${item.status}</span>`;
             if (item.isManuallyOverridden) {
@@ -1860,21 +1912,11 @@ WTP1,D11`;
             }
             statusCell.innerHTML = statusHtml;
 
-            // Regenerate Action Buttons to include the Toggle
+            // Regenerate Action Buttons
             const toggleIcon = item.status === 'PASS' ? 'fa-thumbs-down' : 'fa-thumbs-up';
             const toggleTitle = item.status === 'PASS' ? 'Force Fail' : 'Force Pass';
             const toggleColor = item.status === 'PASS' ? 'text-red-500 hover:bg-red-50' : 'text-green-500 hover:bg-green-50';
 
-            // Reconstruct action buttons
-            // Note: We need url for download button. Since we don't store Blob URL in appState (it's ephemeral), 
-            // we regenerate it on click usually. Here we might need to regenerate blob or just hide it? 
-            // For simplicity, let's keep the existing structure but add the new button.
-            // CAUTION: The download URL in the original row HTML might be lost if we overwrite innerHTML completely.
-            // Better approach: Find or create the toggle button specifically.
-            
-            // Let's re-render the whole cell carefully.
-            // We need to re-create the blob URL if we want the download link to work after update.
-            // But item.wb is stored. So we can generate.
             const wbOut = XLSX.write(item.wb, { bookType: 'xlsx', type: 'array' });
             const blob = new Blob([wbOut], { type: "application/octet-stream" });
             const url = URL.createObjectURL(blob);
@@ -1904,7 +1946,7 @@ WTP1,D11`;
             appState.queue = [];
             appState.processed = {};
             appState.processedKeys = [];
-            appState.stats = { total: 0, pass: 0, fail: 0 };
+            appState.stats = { total: 0, pass: 0, fail: 0, warning: 0 };
             
             // Clear UI
             document.getElementById('result-body').innerHTML = '';
@@ -2112,6 +2154,7 @@ Lanjutkan?`)) {
             appState.stats.total = 0;
             appState.stats.pass = 0;
             appState.stats.fail = 0;
+            appState.stats.warning = 0; // Reset warning
             updateDashboardUI();
 
             for (const item of appState.queue) {
@@ -2132,13 +2175,14 @@ Lanjutkan?`)) {
 
         // NEW: Recalculate stats helper to handle toggles
         function recalculateStats() {
-            let total = 0, pass = 0, fail = 0;
+            let total = 0, pass = 0, fail = 0, warning = 0;
             Object.values(appState.processed).forEach(item => {
                 total++;
                 if (item.status === 'PASS') pass++;
+                else if (item.status === 'WARNING') warning++;
                 else fail++;
             });
-            appState.stats = { total, pass, fail };
+            appState.stats = { total, pass, fail, warning };
             updateDashboardUI();
         }
 
@@ -2146,6 +2190,7 @@ Lanjutkan?`)) {
             document.getElementById('stat-total').innerText = appState.stats.total;
             document.getElementById('stat-pass').innerText = appState.stats.pass;
             document.getElementById('stat-fail').innerText = appState.stats.fail;
+            document.getElementById('stat-warning').innerText = appState.stats.warning; // UI Warning
             
             document.getElementById('badge-all').innerText = appState.stats.total;
             document.getElementById('badge-pass').innerText = appState.stats.pass;
@@ -2171,13 +2216,19 @@ Lanjutkan?`)) {
 
                 // 2. Kolom Cek Asset (Status Custom)
                 // Bila Pass -> "Done Upload SAP (Cek)", Bila Fail -> "NY OK"
-                const cekAsset = item.status === "PASS" ? "Done Upload SAP (Cek)" : "NY OK";
+                let cekAsset = "NY OK";
+                if(item.status === "PASS") cekAsset = "Done Upload SAP (Cek)";
+                else if(item.status === "WARNING") cekAsset = "Done (WARNING)";
 
                 // 3. Kolom Remarks (Message Error)
                 let remarks = "";
-                if (item.errors && item.errors.length > 0) {
+                
+                // Combine Errors and Warnings
+                const allIssues = [...item.errors, ...(item.warnings || [])];
+
+                if (allIssues.length > 0) {
                     // Ambil semua pesan error
-                    const messages = item.errors.map(e => e.Message);
+                    const messages = allIssues.map(e => e.Message);
                     
                     // Deduplikasi: "bila error validation ada 1 lebih tapi sama maka samain aja"
                     const uniqueMessages = [...new Set(messages)];
@@ -2283,13 +2334,15 @@ Lanjutkan?`)) {
                 
                 let rawBelow = XLSX.utils.sheet_to_json(workbook.Sheets['below_ring'], { defval: "" });
                 
-                let belowData = rawBelow.map(r => {
+                // --- MODIFIED MAPPING TO INCLUDE EXCEL ROW INDEX ---
+                let belowData = rawBelow.map((r, idx) => {
                     const newRow = {};
                     Object.keys(r).forEach(k => {
                         const upperK = k.toUpperCase().trim();
                         if (['PID', 'RING_ID'].includes(upperK)) return; 
                         newRow[upperK] = r[k];
                     });
+                    newRow._rowIndex = idx + 2; // Store Excel Row Index (1-based + header)
                     return newRow;
                 });
 
@@ -2316,6 +2369,7 @@ Lanjutkan?`)) {
                 });
 
                 const errors = [];
+                const warnings = []; // NEW: Array for Warnings (R18)
                 const rule5_Allowed = [17, 21, 26, 30];
                 const seenStrno = new Set();
                 const duplicates = new Set();
@@ -2328,10 +2382,19 @@ Lanjutkan?`)) {
                 const segmentMap = {}; // { "SEGMENT_ID": boolean (hasAnchor?) }
                 let segmentOrder = []; // To keep track of order (for finding first segment)
 
+                // =======================================================
+                // R16 (Anti-Split), R17 (Sequential), R18 (Occupancy) Helpers
+                // =======================================================
+                const r16Segments = {}; // { segId: { currentPid: null, seenPids: Set() } }
+                const r17MaterialGroups = {}; // { groupKey: [numbers] }
+                const r18Occupancy = {}; // { segId: { pid: count } }
+
                 belowData.forEach((r, i) => {
+                    const strno = String(r.STRNO || "").trim();
+                    const pltxt = String(r.PLTXT || "").trim();
+                    
+                    // -- R13/R14/R15 Logic (Existing) --
                     if (r.STRNO_LENGTH === 30) {
-                         const strno = String(r.STRNO || "");
-                         // Asumsi 26 digit pertama adalah ID Segment/Kabel (STRNO Core = [Segment 26][Core 4])
                          const segId = strno.substring(0, 26);
                          
                          // Init segment if new
@@ -2340,12 +2403,128 @@ Lanjutkan?`)) {
                              segmentOrder.push(segId);
                          }
 
-                         const p = String(r.PLTXT || "").toUpperCase().trim();
+                         const p = pltxt.toUpperCase();
                          if (p.includes(anchorPid)) {
                              segmentMap[segId] = true;
                          }
+
+                         // -- R16 Logic: Anti-Split per Segment --
+                         if (!r16Segments[segId]) r16Segments[segId] = { currentPid: null, seenPids: new Set() };
+                         const segState = r16Segments[segId];
+
+                         // Normalize PID for continuity check (treat Empty as a distinct 'GAP' state or just null)
+                         const normPid = pltxt ? pltxt : "EMPTY_CORE"; 
+                         
+                         if (normPid !== segState.currentPid) {
+                             // Change Detected
+                             if (segState.seenPids.has(normPid) && normPid !== "EMPTY_CORE") {
+                                 // FAIL: PID muncul kembali setelah terputus
+                                 errors.push({
+                                     Rule: "R16_ANTI_SPLIT",
+                                     Row: r._rowIndex,
+                                     Message: `PID '${pltxt}' terputus (Anti-Split). PID ini muncul kembali di segmen ${segId} setelah diselingi PID lain/Core Kosong.`
+                                 });
+                             }
+                             // Record old PID as seen
+                             if (segState.currentPid && segState.currentPid !== "EMPTY_CORE") {
+                                 segState.seenPids.add(segState.currentPid);
+                             }
+                             // Update current
+                             segState.currentPid = normPid;
+                         }
+
+                         // -- R18 Logic: High Occupancy (Warning) --
+                         if (pltxt && !pltxt.toUpperCase().includes("KABEL")) {
+                             const basePid = pltxt.replace(/\[R\]|\(R\)/gi, '').trim().toUpperCase();
+                             if (!r18Occupancy[segId]) r18Occupancy[segId] = {};
+                             r18Occupancy[segId][basePid] = (r18Occupancy[segId][basePid] || 0) + 1;
+                         }
+                    }
+
+                    // -- R17 Logic: Sequential Check (Assets) --
+                    // Valid for LEN 26 (Assets like JC, KU, ODP) or derived logic
+                    if (r.STRNO_LENGTH === 26) {
+                        // Regex to capture trailing number: e.g. ...-JC01 -> Group: ...-JC, Num: 01
+                        // Adjust regex based on expected format. Usually Last 2 chars are digits.
+                        const match = strno.match(/^(.+?)([A-Z]+)(\d+)$/); 
+                        // Example: S06-020-JC01 -> Group 1: S06-020-, Group 2: JC, Group 3: 01
+                        if (match) {
+                            const groupKey = match[1] + match[2]; // Parent+Type
+                            const numVal = parseInt(match[3], 10);
+                            
+                            if (!r17MaterialGroups[groupKey]) r17MaterialGroups[groupKey] = [];
+                            r17MaterialGroups[groupKey].push({ num: numVal, row: r._rowIndex, strno: strno });
+                        }
                     }
                 });
+
+                // -- Post-Process R17 (Sequential) --
+                Object.keys(r17MaterialGroups).forEach(key => {
+                    const items = r17MaterialGroups[key].sort((a,b) => a.num - b.num);
+                    if (items.length > 0) {
+                        // Check 1: Start from 1
+                        if (items[0].num !== 1) {
+                            errors.push({
+                                Rule: "R17_SEQUENTIAL_START",
+                                Row: items[0].row,
+                                Message: `Urutan aset '${key}' dimulai dari nomor ${items[0].num}, seharusnya 01.`
+                            });
+                        }
+                        // Check 2: Gaps
+                        for (let k = 1; k < items.length; k++) {
+                            const diff = items[k].num - items[k-1].num;
+                            if (diff > 1) {
+                                errors.push({
+                                    Rule: "R17_SEQUENTIAL_GAP",
+                                    Row: items[k].row,
+                                    Message: `Lompatan urutan aset '${key}'. Dari ${items[k-1].strno} langsung ke ${items[k].strno} (Gap detected).`
+                                });
+                            }
+                        }
+                    }
+                });
+
+                // -- Post-Process R18 (Occupancy Warning) --
+                Object.keys(r18Occupancy).forEach(segId => {
+                    const pidCounts = r18Occupancy[segId];
+                    Object.keys(pidCounts).forEach(pid => {
+                        if (pidCounts[pid] > 4) {
+                            warnings.push({
+                                Rule: "R18_HIGH_OCCUPANCY",
+                                Row: `SEGMENT ${segId}`,
+                                Message: `PID '${pid}' menggunakan ${pidCounts[pid]} core dalam satu segmen. (Threshold > 4). Mohon cek manual.`
+                            });
+                        }
+                    });
+                });
+
+                // --- NEW RULE 19: CONNECTIVITY CHECK (BELOW_RING LEN 21 - REVISED) ---
+                // Filter Segmen (Len 21)
+                const segments = belowData.filter(r => r.STRNO_LENGTH === 21);
+                // Sort by STRNO secara fisik untuk memastikan urutan segmen (S01-010, S01-020, dst)
+                segments.sort((a,b) => String(a.STRNO||"").localeCompare(String(b.STRNO||"")));
+
+                // Chain Check: Bandingkan Current Row dengan Next Row
+                for(let k=0; k < segments.length - 1; k++) {
+                    const curr = segments[k];
+                    const next = segments[k+1];
+
+                    // Tokenizing PLTXT
+                    const splitRegex = /[\-\/\s]+/; // Split by -, /, or whitespace
+                    const currTokens = String(curr.PLTXT || "").toUpperCase().split(splitRegex).filter(t => t.length > 1);
+                    const nextTokens = String(next.PLTXT || "").toUpperCase().split(splitRegex).filter(t => t.length > 1);
+
+                    // Intersection Check (Adakah kata yang sama antara Segmen ini dan Segmen berikutnya?)
+                    const hasCommon = currTokens.some(token => nextTokens.includes(token));
+
+                    if (!hasCommon) {
+                        errors.push({
+                            Rule: "R19_CONNECTIVITY",
+                            Row: curr._rowIndex, 
+                            Message: `Putus Konektivitas Segmen: '${curr.PLTXT}' (${curr.STRNO}) tidak memiliki titik simpul yang sama dengan segmen berikutnya '${next.PLTXT}' (${next.STRNO}).`
+                        });
+                    }
+                }
 
                 // --- RULE 14: ANCHOR PID IN FIRST SEGMENT ---
                 if (segmentOrder.length > 0) {
@@ -2376,18 +2555,18 @@ Lanjutkan?`)) {
                     const abckz = String(r.ABCKZ || "").trim().toUpperCase();
 
                     if (!rule5_Allowed.includes(len)) {
-                        errors.push({ Rule: "R5_LENGTH", Row: excelRow(i), Message: `Panjang ${len} tidak valid. STRNO: ${strno}` });
+                        errors.push({ Rule: "R5_LENGTH", Row: r._rowIndex, Message: `Panjang ${len} tidak valid. STRNO: ${strno}` });
                     }
                     if (seenStrno.has(strno)) {
                         duplicates.add(strno);
-                        errors.push({ Rule: "R9_DUPLICATE", Row: excelRow(i), Message: `Duplikat STRNO: ${strno}` });
+                        errors.push({ Rule: "R9_DUPLICATE", Row: r._rowIndex, Message: `Duplikat STRNO: ${strno}` });
                     } else {
                         seenStrno.add(strno);
                     }
                     const baseMap = { 17: "P", 21: "S", 30: "O" };
                     if (baseMap[len]) {
                         if (abckz !== baseMap[len]) {
-                            errors.push({ Rule: "R7_ABCKZ", Row: excelRow(i), Message: `Len ${len} harus ABCKZ='${baseMap[len]}', tapi tertulis '${abckz}'` });
+                            errors.push({ Rule: "R7_ABCKZ", Row: r._rowIndex, Message: `Len ${len} harus ABCKZ='${baseMap[len]}', tapi tertulis '${abckz}'` });
                         }
                     } else if (len === 26) {
                         if (strno.length >= 4) {
@@ -2395,7 +2574,7 @@ Lanjutkan?`)) {
                             const suffixMap = {"KU": "U", "JC": "R", "OB": "B", "OP": "L", "OC": "M", "OL": "J", "KT": "N", "TP": "H"};
                             if (suffixMap[code]) {
                                 if (abckz !== suffixMap[code]) {
-                                    errors.push({ Rule: "R7_ABCKZ", Row: excelRow(i), Message: `Len 26 (Code ${code}) harus ABCKZ='${suffixMap[code]}', tapi tertulis '${abckz}'` });
+                                    errors.push({ Rule: "R7_ABCKZ", Row: r._rowIndex, Message: `Len 26 (Code ${code}) harus ABCKZ='${suffixMap[code]}', tapi tertulis '${abckz}'` });
                                 }
                             }
                         }
@@ -2413,7 +2592,7 @@ Lanjutkan?`)) {
                             if (arbpl !== expectedArbpl) {
                                 errors.push({ 
                                     Rule: "R12_WORK_CENTER", 
-                                    Row: excelRow(i), 
+                                    Row: r._rowIndex, 
                                     Message: `STORT '${stort}' requires ARBPL '${expectedArbpl}', but found '${arbpl}'` 
                                 });
                             }
@@ -2449,13 +2628,13 @@ Lanjutkan?`)) {
                     const is30 = r && r.STRNO_LENGTH === 30;
 
                     if (is30) {
-                        segmentBuffer.push({ idx: i, pltxt: r.PLTXT, strno: r.STRNO });
+                        segmentBuffer.push({ idx: r._rowIndex, pltxt: r.PLTXT, strno: r.STRNO });
                     } else {
                         if (segmentBuffer.length > 0) {
                             const allEmpty = segmentBuffer.every(item => isEmpty(item.pltxt));
                             if (allEmpty) {
-                                const startRow = excelRow(segmentBuffer[0].idx);
-                                const endRow = excelRow(segmentBuffer[segmentBuffer.length-1].idx);
+                                const startRow = segmentBuffer[0].idx;
+                                const endRow = segmentBuffer[segmentBuffer.length-1].idx;
                                 errors.push({ 
                                     Rule: "R6_SEGMENT_EMPTY", 
                                     Row: `${startRow}-${endRow}`, 
@@ -2496,6 +2675,9 @@ Lanjutkan?`)) {
                             }
                         });
 
+                        // --- OLD R19 REMOVED ---
+                        // (Removed Intersection Check on display_ring as per update instructions)
+
                         const cableId = r['LINK_DESCRIPTION'];
                         if (cableId) {
                             const cores = belowData.filter(b => {
@@ -2531,11 +2713,6 @@ Lanjutkan?`)) {
                                                 Message: `Inkonsistensi PID ${pid} antar Segmen: ${lastCableId} (${countLast} core) -> ${cableId} (${countCurr} core).`
                                             });
                                         }
-                                    } else {
-                                        // Optional: Warn if PID disappears completely? 
-                                        // For now, only fail on count mismatch if present in both. 
-                                        // If user implies "disappearing" is also fail, we'd add check here.
-                                        // But usually dropping a service at a generic point is valid termination.
                                     }
                                 }
                             }
@@ -2547,23 +2724,32 @@ Lanjutkan?`)) {
                     });
                 }
 
-                const isPass = errors.length === 0;
-                const statusStr = isPass ? "PASS" : "FAIL";
+                // --- FINAL STATUS DETERMINATION (Tiered Logic) ---
+                let statusStr = "PASS";
+                if (errors.length > 0) {
+                    statusStr = "FAIL";
+                } else if (warnings.length > 0) {
+                    statusStr = "WARNING";
+                }
+
+                const isPass = (statusStr === "PASS");
 
                 appState.stats.total++;
-                if(isPass) {
+                if(statusStr === "PASS") {
                     appState.stats.pass++;
                     GameSystem.addXP(10, "Validation Passed");
-                } else {
+                } else if (statusStr === "FAIL") {
                     appState.stats.fail++;
+                } else {
+                    appState.stats.warning++; // Increment Warning Stat
                 }
                 updateDashboardUI();
 
                 const newWb = XLSX.utils.book_new();
                 
-                // --- CLEAN DATA FOR EXPORT (Remove STRNO_LENGTH) ---
+                // --- CLEAN DATA FOR EXPORT (Remove STRNO_LENGTH and _rowIndex) ---
                 const exportBelowData = belowData.map(r => {
-                    const { STRNO_LENGTH, ...rest } = r;
+                    const { STRNO_LENGTH, _rowIndex, ...rest } = r;
                     return rest;
                 });
 
@@ -2586,10 +2772,17 @@ Lanjutkan?`)) {
                     const wsErr = XLSX.utils.json_to_sheet(errors);
                     XLSX.utils.book_append_sheet(newWb, wsErr, "ERROR_LOG");
                 }
+                
+                // Append Warnings to Log if any
+                if (warnings.length > 0) {
+                     const wsWarn = XLSX.utils.json_to_sheet(warnings);
+                     XLSX.utils.book_append_sheet(newWb, wsWarn, "WARNING_LOG");
+                }
 
                 const summary = [
                     { ITEM: "STATUS", VALUE: statusStr },
                     { ITEM: "TOTAL_ERRORS", VALUE: errors.length },
+                    { ITEM: "TOTAL_WARNINGS", VALUE: warnings.length },
                     { ITEM: "CHECKED_SHEETS", VALUE: "below_ring, display_ring" }
                 ];
                 const wsSum = XLSX.utils.json_to_sheet(summary);
@@ -2603,6 +2796,7 @@ Lanjutkan?`)) {
                     pid: anchorPid, // Use the clean Anchor PID
                     status: statusStr,
                     errors: errors,
+                    warnings: warnings, // Store warnings
                     sapTxt: sapTxt,
                     rowId: rowId,
                     isManuallyOverridden: false // New property for Force Status
@@ -2614,7 +2808,13 @@ Lanjutkan?`)) {
                 updateRowStatusUI(rowId, appState.processed[file.name]);
                 updateTableRowVerifiedStatus(rowId, anchorPid);
 
-                msgCell.innerHTML = isPass ? "<span class='text-green-600 dark:text-green-400 font-medium'><i class='fa-solid fa-check-circle mr-1'></i> Validated Successfully</span>" : `<span class='text-red-600 dark:text-red-400 font-medium'><i class='fa-solid fa-triangle-exclamation mr-1'></i> Found ${errors.length} errors</span>`;
+                if (statusStr === "PASS") {
+                     msgCell.innerHTML = "<span class='text-green-600 dark:text-green-400 font-medium'><i class='fa-solid fa-check-circle mr-1'></i> Validated Successfully</span>";
+                } else if (statusStr === "WARNING") {
+                     msgCell.innerHTML = `<span class='text-orange-600 dark:text-orange-400 font-medium'><i class='fa-solid fa-triangle-exclamation mr-1'></i> Found ${warnings.length} warnings</span>`;
+                } else {
+                     msgCell.innerHTML = `<span class='text-red-600 dark:text-red-400 font-medium'><i class='fa-solid fa-xmark mr-1'></i> Found ${errors.length} errors</span>`;
+                }
 
                 // Re-apply filter if active (to hide/show this new row)
                 if(window.currentQueueFilter && window.currentQueueFilter !== 'all') {
@@ -2688,7 +2888,9 @@ Lanjutkan?`)) {
             generateSVG(data.displayData, data.belowData, data.pid);
             renderDisplayRingTable(data.displayData);
             updatePaginationInfo();
-            renderErrorTable(data.errors);
+            // Combine errors and warnings for display in modal
+            const allIssues = [...data.errors, ...(data.warnings || [])];
+            renderErrorTable(allIssues);
         }
 
         function renderDisplayRingTable(displayData) {
@@ -2737,7 +2939,7 @@ Lanjutkan?`)) {
             tbody.innerHTML = '';
             
             if(!errors || errors.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="3" class="px-6 py-12 text-center text-gray-400 italic"><i class="fa-solid fa-check-circle text-4xl text-green-100 mb-2 block"></i>No validation errors found</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="3" class="px-6 py-12 text-center text-gray-400 italic"><i class="fa-solid fa-check-circle text-4xl text-green-100 mb-2 block"></i>No validation issues found</td></tr>`;
                 badge.classList.add('hidden');
                 badge.innerText = '0';
                 countDisplay.innerText = '0 Issues Found';
@@ -2752,16 +2954,21 @@ Lanjutkan?`)) {
 
             errors.forEach(err => {
                 const tr = document.createElement('tr');
-                tr.className = "hover:bg-red-50 dark:hover:bg-red-900/10 transition border-b border-red-50 dark:border-gray-800";
+                // Color code warnings vs errors
+                const isWarning = (err.Rule === "R18_HIGH_OCCUPANCY");
+                const rowClass = isWarning ? "hover:bg-orange-50 dark:hover:bg-orange-900/10" : "hover:bg-red-50 dark:hover:bg-red-900/10";
+                const textClass = isWarning ? "text-orange-600 dark:text-orange-400" : "text-red-600 dark:text-red-400";
+
+                tr.className = `${rowClass} transition border-b border-gray-100 dark:border-gray-800`;
                 tr.innerHTML = `
                     <td class="px-6 py-3 text-sm font-mono text-slate-500 dark:text-gray-400">${err.Row}</td>
-                    <td class="px-6 py-3 text-sm font-bold text-red-600 dark:text-red-400">${err.Rule}</td>
+                    <td class="px-6 py-3 text-sm font-bold ${textClass}">${err.Rule}</td>
                     <td class="px-6 py-3 text-sm text-slate-700 dark:text-gray-300">${err.Message}</td>
                 `;
                 tbody.appendChild(tr);
             });
         }
-
+    // ... (Remaining scripts for Viz SVG Generation, Batcher, and Converter logic remain EXACTLY unchanged) ...
         function switchTab(tab) {
             const btnViz = document.getElementById('tab-viz');
             const btnDisplay = document.getElementById('tab-display');
@@ -2802,14 +3009,41 @@ Lanjutkan?`)) {
             activeBtn.classList.remove('text-gray-500');
         }
 
+        // --- NEW: LEN FILTER HANDLER ---
+        function setLenFilter(len) {
+            appState.currentLenFilter = len;
+            // Update Button Styles
+            ['all', '17', '21', '26', '30'].forEach(l => {
+                const btn = document.getElementById(`len-btn-${l}`);
+                if(l === len) {
+                    btn.className = "px-3 py-1.5 text-xs font-bold rounded-lg bg-mitratel-red text-white transition shadow-sm whitespace-nowrap";
+                } else {
+                    btn.className = "px-3 py-1.5 text-xs font-bold rounded-lg bg-gray-100 text-gray-500 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700 transition whitespace-nowrap";
+                }
+            });
+            filterTable();
+        }
+
         function filterTable() {
             const term = document.getElementById('tableSearch').value.toLowerCase();
-            appState.filteredData = appState.currentData.filter(row => 
-                row.strno.toLowerCase().includes(term) || 
-                row.pltxt.toLowerCase().includes(term) ||
-                row.stort.toLowerCase().includes(term) || 
-                row.arbpl.toLowerCase().includes(term)
-            );
+            const lenFilter = appState.currentLenFilter;
+
+            appState.filteredData = appState.currentData.filter(row => {
+                // Text Search
+                const matchesText = row.strno.toLowerCase().includes(term) || 
+                                    row.pltxt.toLowerCase().includes(term) ||
+                                    row.stort.toLowerCase().includes(term) || 
+                                    row.arbpl.toLowerCase().includes(term);
+
+                // Length Filter
+                let matchesLen = true;
+                if (lenFilter !== 'all') {
+                    matchesLen = (row.strno.length === parseInt(lenFilter));
+                }
+
+                return matchesText && matchesLen;
+            });
+
             appState.currentPage = 1;
             renderTablePage();
             updatePaginationInfo();
@@ -3460,9 +3694,8 @@ Lanjutkan?`)) {
         })();
 
     </script>
-
-    <!-- Converter Script -->
-    <script>
+<!-- Converter Script (UNCHANGED) -->
+<script>
 (function(){
 'use strict';
 // UI Elements
