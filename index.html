@@ -646,7 +646,12 @@
                     </div>
                      <div>
                         <strong class="text-red-600 dark:text-red-400">R19: Connectivity (FAIL)</strong>
-                        <p class="mt-1">Check konektivitas pada Segmen (STRNO 21) di below_ring. Memastikan rantai OTB-ODC, ODC-ODC, ODC-CLOSURE terhubung.</p>
+                        <p class="mt-1">Check konektivitas pada Segmen (STRNO 21). Memastikan rantai OTB-ODC, ODC-ODC, ODC-CLOSURE terhubung. <b>Pengecualian:</b> CLOSURE-CLOSURE ke ODC/OTB dianggap Valid. Dan jika baris mengandung ODC/OTB dianggap titik sambung Valid.</p>
+                    </div>
+                    <!-- NEW R20 EXPLANATION -->
+                     <div>
+                        <strong class="text-red-600 dark:text-red-400">R20: Display Ring Chain (FAIL)</strong>
+                        <p class="mt-1">Check konektivitas pada sheet display_ring. Baris ke-2 (Input) harus sama persis dengan Baris ke-1 (Output) sebelumnya.</p>
                     </div>
                 </div>
             </div>
@@ -2498,30 +2503,66 @@ Lanjutkan?`)) {
                     });
                 });
 
-                // --- NEW RULE 19: CONNECTIVITY CHECK (BELOW_RING LEN 21 - REVISED) ---
+                // --- NEW RULE 19: CONNECTIVITY CHECK (UPDATED WITH SPECIAL LOGIC) ---
                 // Filter Segmen (Len 21)
                 const segments = belowData.filter(r => r.STRNO_LENGTH === 21);
-                // Sort by STRNO secara fisik untuk memastikan urutan segmen (S01-010, S01-020, dst)
+                // Sort by STRNO secara fisik untuk memastikan urutan segmen
                 segments.sort((a,b) => String(a.STRNO||"").localeCompare(String(b.STRNO||"")));
 
-                // Chain Check: Bandingkan Current Row dengan Next Row
                 for(let k=0; k < segments.length - 1; k++) {
                     const curr = segments[k];
                     const next = segments[k+1];
 
-                    // Tokenizing PLTXT
-                    const splitRegex = /[\-\/\s]+/; // Split by -, /, or whitespace
-                    const currTokens = String(curr.PLTXT || "").toUpperCase().split(splitRegex).filter(t => t.length > 1);
-                    const nextTokens = String(next.PLTXT || "").toUpperCase().split(splitRegex).filter(t => t.length > 1);
+                    const currTxt = String(curr.PLTXT || "").toUpperCase().trim();
+                    const nextTxt = String(next.PLTXT || "").toUpperCase().trim();
+                    const currStrno = String(curr.STRNO || "").toUpperCase().trim();
+                    const nextStrno = String(next.STRNO || "").toUpperCase().trim();
 
-                    // Intersection Check (Adakah kata yang sama antara Segmen ini dan Segmen berikutnya?)
+                    // --- CASE C: Span/Ring Break Check ---
+                    // Helper to extract Span ID (everything before the last segment number)
+                    // Example: R10-WTP1-R003-S01-030 -> Span: R10-WTP1-R003-S01
+                    const extractSpan = (str) => {
+                         const parts = str.split('-');
+                         if (parts.length > 1) {
+                             return parts.slice(0, -1).join('-'); 
+                         }
+                         return str;
+                    };
+
+                    const currSpan = extractSpan(currStrno);
+                    const nextSpan = extractSpan(nextStrno);
+
+                    if (currSpan !== nextSpan) {
+                        continue; // Case C: Span changed, valid break.
+                    }
+
+                    // --- CASE A & B: Special Infra Logic ---
+                    const isCurrClosure = currTxt.includes("CLOSURE-CLOSURE");
+                    const hasInfraCurr = currTxt.includes("ODC") || currTxt.includes("OTB");
+                    const hasInfraNext = nextTxt.includes("ODC") || nextTxt.includes("OTB");
+
+                    // Case A: CLOSURE-CLOSURE followed by Infra
+                    if (isCurrClosure && hasInfraNext) {
+                        continue; // Valid Override
+                    }
+
+                    // Case B: Current is Infra (ODC/OTB) -> Connects to anything (valid bridge)
+                    if (hasInfraCurr) {
+                        continue; // Valid Override
+                    }
+
+                    // --- STANDARD CHECK (Token Intersection) ---
+                    const splitRegex = /[\-\/\s]+/; 
+                    const currTokens = currTxt.split(splitRegex).filter(t => t.length > 1);
+                    const nextTokens = nextTxt.split(splitRegex).filter(t => t.length > 1);
+                    
                     const hasCommon = currTokens.some(token => nextTokens.includes(token));
 
                     if (!hasCommon) {
                         errors.push({
                             Rule: "R19_CONNECTIVITY",
                             Row: curr._rowIndex, 
-                            Message: `Putus Konektivitas Segmen: '${curr.PLTXT}' (${curr.STRNO}) tidak memiliki titik simpul yang sama dengan segmen berikutnya '${next.PLTXT}' (${next.STRNO}).`
+                            Message: `Putus Konektivitas Segmen: '${curr.PLTXT}' tidak menyambung ke '${next.PLTXT}' (dalam Span yang sama: ${currSpan}).`
                         });
                     }
                 }
@@ -2722,6 +2763,24 @@ Lanjutkan?`)) {
                             lastCableId = cableId;
                         }
                     });
+
+                    // --- NEW RULE 20: DISPLAY RING CONNECTIVITY CHAIN ---
+                    // Memastikan urutan kabel tidak terputus (Output Baris N-1 == Input Baris N)
+                    for (let i = 1; i < displayData.length; i++) {
+                        const prev = displayData[i - 1];
+                        const curr = displayData[i];
+                        
+                        const prevTo = String(prev['LINK_TO_FUNCTIONAL_LOCATION_DESC'] || "").trim();
+                        const currFrom = String(curr['LINK_FROM_FUNCTIONAL_LOCATION_DESC'] || "").trim();
+
+                        if (prevTo !== currFrom) {
+                            errors.push({
+                                Rule: "R20_DISPLAY_CHAIN",
+                                Row: excelRow(i),
+                                Message: `Chain Break: 'LINK_FROM_DESC' (${currFrom}) tidak menyambung dari 'LINK_TO_DESC' baris sebelumnya (${prevTo}).`
+                            });
+                        }
+                    }
                 }
 
                 // --- FINAL STATUS DETERMINATION (Tiered Logic) ---
