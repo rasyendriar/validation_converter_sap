@@ -209,7 +209,7 @@
             <div>
                 <h1 class="text-xl font-bold text-slate-900 dark:text-white">SAP Migration Suite</h1>
                 <p class="text-sm text-slate-500 dark:text-gray-400 mt-1 flex items-center gap-2">
-                    <span class="bg-gray-100 dark:bg-gray-800 text-xs px-2 py-0.5 rounded text-gray-600 dark:text-gray-300 font-mono">v4.31 (Updated R20)</span>
+                    <span class="bg-gray-100 dark:bg-gray-800 text-xs px-2 py-0.5 rounded text-gray-600 dark:text-gray-300 font-mono">v4.32 (Strict R19)</span>
                     Validation Rules
                 </p>
             </div>
@@ -605,7 +605,6 @@
     </div>
 </div>
 
-<!-- ... (Modals remain unchanged) ... -->
 <!-- MODALS -->
 <!-- 1. Guide Modal -->
 <div id="guideModal" class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4 transition-opacity">
@@ -613,7 +612,7 @@
         <button onclick="toggleGuide()" class="absolute top-6 right-6 text-gray-400 hover:text-slate-900 dark:hover:text-white transition">
             <i class="fa-solid fa-xmark text-xl"></i>
         </button>
-        <h2 class="text-2xl font-bold text-slate-900 dark:text-white mb-6">User Guide <span class="text-mitratel-red">v4.31</span></h2>
+        <h2 class="text-2xl font-bold text-slate-900 dark:text-white mb-6">User Guide <span class="text-mitratel-red">v4.32</span></h2>
         <div class="space-y-4 text-sm text-slate-600 dark:text-gray-300 overflow-y-auto max-h-[60vh] pr-2">
              <div class="p-4 bg-gray-50 dark:bg-gray-800 rounded-xl">
                 <h3 class="font-bold text-slate-900 dark:text-white mb-2"><i class="fa-solid fa-keyboard text-mitratel-red mr-2"></i>New: Keyboard Shortcuts</h3>
@@ -629,7 +628,7 @@
             </div>
              <!-- New Rules Explanation -->
              <div class="p-4 bg-orange-50 dark:bg-orange-900/10 rounded-xl mt-4 border border-orange-100 dark:border-orange-800">
-                <h3 class="font-bold text-slate-900 dark:text-white mb-2"><i class="fa-solid fa-star text-orange-500 mr-2"></i>New Rules (v4.31)</h3>
+                <h3 class="font-bold text-slate-900 dark:text-white mb-2"><i class="fa-solid fa-star text-orange-500 mr-2"></i>New Rules (v4.32)</h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
                     <div>
                         <strong class="text-red-600 dark:text-red-400">R16: Anti-Split (FAIL)</strong>
@@ -644,10 +643,10 @@
                         <p class="mt-1">Peringatan jika satu PID menggunakan lebih dari 4 core dalam satu segmen.</p>
                     </div>
                      <div>
+                        <!-- RULE 19 UPDATED GUIDE -->
                         <strong class="text-red-600 dark:text-red-400">R19: Connectivity (FAIL)</strong>
-                        <p class="mt-1">Check konektivitas pada Segmen (STRNO 21). Memastikan rantai OTB-ODC, ODC-ODC, ODC-CLOSURE terhubung. <b>Pengecualian:</b> CLOSURE-CLOSURE ke ODC/OTB dianggap Valid. Dan jika baris mengandung ODC/OTB dianggap titik sambung Valid.</p>
+                        <p class="mt-1">Check konektivitas ketat (Strict Daisy-Chain) pada Segmen (STRNO 21). End-Point segmen atas wajib sama persis dengan Start-Point segmen bawah tanpa pengecualian (termasuk CLOSURE-CLOSURE).</p>
                     </div>
-                    <!-- NEW R20 EXPLANATION -->
                      <div>
                         <strong class="text-orange-600 dark:text-orange-400">R20: Display Ring Chain (WARN)</strong>
                         <p class="mt-1">Check konektivitas pada sheet display_ring. Baris ke-2 (Input) harus sama persis dengan Baris ke-1 (Output) sebelumnya. (Peringatan saja, judgement user).</p>
@@ -663,10 +662,9 @@
         </div>
     </div>
 </div>
-<!-- Viz Modal & Missing Files Modal omitted for brevity but assumed present unchanged -->
+
 <!-- 2. Viz Modal (Full Screen) -->
 <div id="vizModal" class="fixed inset-0 bg-gray-900/80 backdrop-blur-sm hidden z-50 flex flex-col transition-opacity duration-300">
-    <!-- Content same as before, simplified for brevity in this view but fully preserved in output -->
     <div class="m-auto bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-[98%] h-[95vh] flex flex-col overflow-hidden border border-gray-200 dark:border-gray-800">
         <!-- Header -->
         <div class="flex justify-between items-center px-6 py-4 border-b border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900">
@@ -2502,7 +2500,7 @@ Lanjutkan?`)) {
                     });
                 });
 
-                // --- NEW RULE 19: CONNECTIVITY CHECK (UPDATED WITH SPECIAL LOGIC) ---
+                // --- NEW RULE 19: CONNECTIVITY CHECK (STRICT DAISY-CHAIN - FAIL) ---
                 // Filter Segmen (Len 21)
                 const segments = belowData.filter(r => r.STRNO_LENGTH === 21);
                 // Sort by STRNO secara fisik untuk memastikan urutan segmen
@@ -2514,54 +2512,33 @@ Lanjutkan?`)) {
 
                     const currTxt = String(curr.PLTXT || "").toUpperCase().trim();
                     const nextTxt = String(next.PLTXT || "").toUpperCase().trim();
-                    const currStrno = String(curr.STRNO || "").toUpperCase().trim();
-                    const nextStrno = String(next.STRNO || "").toUpperCase().trim();
 
-                    // --- CASE C: Span/Ring Break Check ---
-                    // Helper to extract Span ID (everything before the last segment number)
-                    // Example: R10-WTP1-R003-S01-030 -> Span: R10-WTP1-R003-S01
-                    const extractSpan = (str) => {
-                         const parts = str.split('-');
-                         if (parts.length > 1) {
-                             return parts.slice(0, -1).join('-'); 
-                         }
-                         return str;
-                    };
+                    // --- NEW: PENGECUALIAN CLOSURE-CLOSURE DIHAPUS (Tetap difailkan) ---
+                    // Logika pengecualian sudah ditiadakan sesuai instruksi agar saklek
 
-                    const currSpan = extractSpan(currStrno);
-                    const nextSpan = extractSpan(nextStrno);
+                    // Pecah berdasarkan delimiter '-'
+                    const currParts = currTxt.split('-').map(p => p.trim()).filter(p => p.length > 0);
+                    const nextParts = nextTxt.split('-').map(p => p.trim()).filter(p => p.length > 0);
 
-                    if (currSpan !== nextSpan) {
-                        continue; // Case C: Span changed, valid break.
-                    }
+                    if (currParts.length > 0 && nextParts.length > 0) {
+                        // Ambil End-Point dari elemen terakhir baris saat ini
+                        const currEndPoint = currParts[currParts.length - 1];
+                        // Ambil Start-Point dari elemen pertama baris berikutnya
+                        const nextStartPoint = nextParts[0];
 
-                    // --- CASE A & B: Special Infra Logic ---
-                    const isCurrClosure = currTxt.includes("CLOSURE-CLOSURE");
-                    const hasInfraCurr = currTxt.includes("ODC") || currTxt.includes("OTB");
-                    const hasInfraNext = nextTxt.includes("ODC") || nextTxt.includes("OTB");
-
-                    // Case A: CLOSURE-CLOSURE followed by Infra
-                    if (isCurrClosure && hasInfraNext) {
-                        continue; // Valid Override
-                    }
-
-                    // Case B: Current is Infra (ODC/OTB) -> Connects to anything (valid bridge)
-                    if (hasInfraCurr) {
-                        continue; // Valid Override
-                    }
-
-                    // --- STANDARD CHECK (Token Intersection) ---
-                    const splitRegex = /[\-\/\s]+/; 
-                    const currTokens = currTxt.split(splitRegex).filter(t => t.length > 1);
-                    const nextTokens = nextTxt.split(splitRegex).filter(t => t.length > 1);
-                    
-                    const hasCommon = currTokens.some(token => nextTokens.includes(token));
-
-                    if (!hasCommon) {
-                        errors.push({
+                        if (currEndPoint !== nextStartPoint) {
+                            // Dimasukkan ke array 'errors' (FAIL)
+                            errors.push({
+                                Rule: "R19_CONNECTIVITY",
+                                Row: curr._rowIndex, 
+                                Message: `Connectivity Terputus: End-Point '${currEndPoint}' pada segmen '${curr.PLTXT}' tidak menyambung dengan Start-Point '${nextStartPoint}' pada segmen '${next.PLTXT}' di baris bawahnya.`
+                            });
+                        }
+                    } else if (currTxt === "" || nextTxt === "") {
+                         errors.push({
                             Rule: "R19_CONNECTIVITY",
                             Row: curr._rowIndex, 
-                            Message: `Putus Konektivitas Segmen: '${curr.PLTXT}' tidak menyambung ke '${next.PLTXT}' (dalam Span yang sama: ${currSpan}).`
+                            Message: `Connectivity Terputus: Terdapat kolom PLTXT (Segmen) yang kosong pada rentetan data.`
                         });
                     }
                 }
@@ -2714,9 +2691,6 @@ Lanjutkan?`)) {
                                 }
                             }
                         });
-
-                        // --- OLD R19 REMOVED ---
-                        // (Removed Intersection Check on display_ring as per update instructions)
 
                         const cableId = r['LINK_DESCRIPTION'];
                         if (cableId) {
