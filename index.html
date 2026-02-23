@@ -631,8 +631,8 @@
                 <h3 class="font-bold text-slate-900 dark:text-white mb-2"><i class="fa-solid fa-star text-orange-500 mr-2"></i>New Rules (v4.32)</h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
                     <div>
-                        <strong class="text-red-600 dark:text-red-400">R16: Anti-Split (FAIL)</strong>
-                        <p class="mt-1">Project ID dalam satu segmen tidak boleh terputus. Harus berurutan.</p>
+                        <strong class="text-red-600 dark:text-red-400">R16: Anti-Split (FAIL/WARN)</strong>
+                        <p class="mt-1">Project ID dalam satu segmen tidak boleh terputus. Jika diselingi core kosong = FAIL. Jika diselingi project lain = WARNING.</p>
                     </div>
                     <div>
                         <strong class="text-red-600 dark:text-red-400">R17: Sequential (FAIL)</strong>
@@ -2411,28 +2411,41 @@ Lanjutkan?`)) {
                          }
 
                          // -- R16 Logic: Anti-Split per Segment --
-                         if (!r16Segments[segId]) r16Segments[segId] = { currentPid: null, seenPids: new Set() };
+                         if (!r16Segments[segId]) r16Segments[segId] = { sequence: [] };
                          const segState = r16Segments[segId];
 
                          // Normalize PID for continuity check (treat Empty as a distinct 'GAP' state or just null)
                          const normPid = pltxt ? pltxt : "EMPTY_CORE"; 
                          
-                         if (normPid !== segState.currentPid) {
+                         const seqLen = segState.sequence.length;
+                         const lastPidInSeq = seqLen > 0 ? segState.sequence[seqLen - 1].pid : null;
+
+                         if (normPid !== lastPidInSeq) {
                              // Change Detected
-                             if (segState.seenPids.has(normPid) && normPid !== "EMPTY_CORE") {
-                                 // FAIL: PID muncul kembali setelah terputus
-                                 errors.push({
-                                     Rule: "R16_ANTI_SPLIT",
-                                     Row: r._rowIndex,
-                                     Message: `PID '${pltxt}' terputus (Anti-Split). PID ini muncul kembali di segmen ${segId} setelah diselingi PID lain/Core Kosong.`
-                                 });
+                             if (normPid !== "EMPTY_CORE") {
+                                 const prevIndex = segState.sequence.map(s => s.pid).lastIndexOf(normPid);
+                                 if (prevIndex !== -1) {
+                                     // It's a split! Analyze the gap
+                                     const gapSlice = segState.sequence.slice(prevIndex + 1);
+                                     const hasEmptyCore = gapSlice.some(s => s.pid === "EMPTY_CORE");
+
+                                     if (hasEmptyCore) {
+                                         errors.push({
+                                             Rule: "R16_ANTI_SPLIT",
+                                             Row: r._rowIndex,
+                                             Message: `Error: PID '${pltxt}' terputus oleh core kosong di segmen ${segId}.`
+                                         });
+                                     } else {
+                                         warnings.push({
+                                             Rule: "R16_ANTI_SPLIT_WARN",
+                                             Row: r._rowIndex,
+                                             Message: `Peringatan: PID '${pltxt}' diselingi oleh project lain di segmen ${segId}.`
+                                         });
+                                     }
+                                 }
                              }
-                             // Record old PID as seen
-                             if (segState.currentPid && segState.currentPid !== "EMPTY_CORE") {
-                                 segState.seenPids.add(segState.currentPid);
-                             }
-                             // Update current
-                             segState.currentPid = normPid;
+                             // Push new state to sequence
+                             segState.sequence.push({ pid: normPid, row: r._rowIndex });
                          }
 
                          // -- R18 Logic: High Occupancy (Warning) --
@@ -2633,7 +2646,7 @@ Lanjutkan?`)) {
 
                 if (!anchorPidFound) {
                     errors.push({
-                        Rule: "R13_ANCHOR_MISSING",
+                        Rule: "R13_ANCHOR_PID_MISSING",
                         Row: "GLOBAL",
                         Message: `Anchor PID '${anchorPid}' (dari Nama File) tidak ditemukan sama sekali pada data Core (STRNO 30, kolom PLTXT). Pastikan nama file sesuai isi.`
                     });
@@ -2653,9 +2666,9 @@ Lanjutkan?`)) {
                                 const startRow = segmentBuffer[0].idx;
                                 const endRow = segmentBuffer[segmentBuffer.length-1].idx;
                                 errors.push({ 
-                                    Rule: "R6_SEGMENT_EMPTY", 
+                                    Rule: "R6_NO_PID_FOUND", 
                                     Row: `${startRow}-${endRow}`, 
-                                    Message: `Segmen Core (30) kosong semua tenant-nya. ${segmentBuffer[0].strno} ...` 
+                                    Message: `Tidak ditemukan PID pada segmen ini. Seluruh core pada rentetan kabel '${segmentBuffer[0].strno}' hingga akhir dibiarkan kosong.` 
                                 });
                             }
                         }
@@ -2987,8 +3000,8 @@ Lanjutkan?`)) {
             errors.forEach(err => {
                 const tr = document.createElement('tr');
                 // Color code warnings vs errors
-                // NEW: Also check for R20_DISPLAY_CHAIN
-                const isWarning = (err.Rule === "R18_HIGH_OCCUPANCY" || err.Rule === "R20_DISPLAY_CHAIN");
+                // NEW: Also check for R20_DISPLAY_CHAIN and R16_ANTI_SPLIT_WARN
+                const isWarning = (err.Rule === "R18_HIGH_OCCUPANCY" || err.Rule === "R20_DISPLAY_CHAIN" || err.Rule === "R16_ANTI_SPLIT_WARN");
                 const rowClass = isWarning ? "hover:bg-orange-50 dark:hover:bg-orange-900/10" : "hover:bg-red-50 dark:hover:bg-red-900/10";
                 const textClass = isWarning ? "text-orange-600 dark:text-orange-400" : "text-red-600 dark:text-red-400";
 
