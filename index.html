@@ -643,9 +643,9 @@
                         <p class="mt-1">Peringatan jika satu PID menggunakan lebih dari 4 core dalam satu segmen.</p>
                     </div>
                      <div>
-                        <!-- RULE 19 UPDATED GUIDE -->
-                        <strong class="text-red-600 dark:text-red-400">R19: Connectivity (FAIL)</strong>
-                        <p class="mt-1">Check konektivitas ketat (Strict Daisy-Chain) pada Segmen (STRNO 21). End-Point segmen atas wajib sama persis dengan Start-Point segmen bawah tanpa pengecualian (termasuk CLOSURE-CLOSURE).</p>
+						<!-- RULE 19 UPDATED GUIDE -->
+                        <strong class="text-orange-600 dark:text-orange-400">R19: Connectivity (WARN)</strong>
+                        <p class="mt-1">Peringatan konektivitas (Daisy-Chain) pada Segmen (STRNO 21). End-Point segmen atas seharusnya sama dengan Start-Point segmen bawah.</p>
                     </div>
                      <div>
                         <strong class="text-orange-600 dark:text-orange-400">R20: Display Ring Chain (WARN)</strong>
@@ -2541,14 +2541,14 @@ Lanjutkan?`)) {
 
                         if (currEndPoint !== nextStartPoint) {
                             // Dimasukkan ke array 'errors' (FAIL)
-                            errors.push({
+                            warnings.push({
                                 Rule: "R19_CONNECTIVITY",
                                 Row: curr._rowIndex, 
                                 Message: `Connectivity Terputus: End-Point '${currEndPoint}' pada segmen '${curr.PLTXT}' tidak menyambung dengan Start-Point '${nextStartPoint}' pada segmen '${next.PLTXT}' di baris bawahnya.`
                             });
                         }
                     } else if (currTxt === "" || nextTxt === "") {
-                         errors.push({
+                         warnings.push({
                             Rule: "R19_CONNECTIVITY",
                             Row: curr._rowIndex, 
                             Message: `Connectivity Terputus: Terdapat kolom PLTXT (Segmen) yang kosong pada rentetan data.`
@@ -3001,7 +3001,7 @@ Lanjutkan?`)) {
                 const tr = document.createElement('tr');
                 // Color code warnings vs errors
                 // NEW: Also check for R20_DISPLAY_CHAIN and R16_ANTI_SPLIT_WARN
-                const isWarning = (err.Rule === "R18_HIGH_OCCUPANCY" || err.Rule === "R20_DISPLAY_CHAIN" || err.Rule === "R16_ANTI_SPLIT_WARN");
+                const isWarning = (err.Rule === "R18_HIGH_OCCUPANCY" || err.Rule === "R20_DISPLAY_CHAIN" || err.Rule === "R16_ANTI_SPLIT_WARN" || err.Rule === "R19_CONNECTIVITY");
                 const rowClass = isWarning ? "hover:bg-orange-50 dark:hover:bg-orange-900/10" : "hover:bg-red-50 dark:hover:bg-red-900/10";
                 const textClass = isWarning ? "text-orange-600 dark:text-orange-400" : "text-red-600 dark:text-red-400";
 
